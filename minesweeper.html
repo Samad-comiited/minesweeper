@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Minesweeper — Boolean Algebra</title>
+<style>
+  /* ── reset ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: Arial, sans-serif;
+    background: #1a1a2e;
+    color: #e0e0e0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1.5rem 1rem 3rem;
+  }
+
+  h1 {
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+    color: #ffffff;
+  }
+
+  .subtitle {
+    font-size: 11px;
+    color: #7a7a9a;
+    margin-bottom: 1rem;
+    letter-spacing: 0.5px;
+  }
+
+  /* ── top bar ── */
+  #topbar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  button {
+    padding: 7px 16px;
+    border-radius: 6px;
+    border: 1px solid #3a3a5c;
+    background: #252545;
+    color: #c0c0e0;
+    font-size: 13px;
+    cursor: pointer;
+    font-family: Arial, sans-serif;
+    transition: background 0.15s;
+  }
+  button:hover { background: #2e2e55; }
+  button.active { background: #1a3a6a; border-color: #4a7acc; color: #90c0ff; }
+
+  /* ── info bar ── */
+  #info {
+    display: flex;
+    gap: 1.5rem;
+    align-items: center;
+    font-size: 14px;
+    color: #9090b0;
+    margin-bottom: 10px;
+  }
+  #mine-count { font-size: 18px; font-weight: 600; color: #e05050; }
+  #timer      { font-size: 18px; font-weight: 600; color: #50a0e0; }
+  #status     { font-size: 13px; font-weight: 500; color: #e0e0e0; text-align: center; min-height: 18px; }
+
+  /* ── grid ── */
+  #grid {
+    display: grid;
+    grid-template-columns: repeat(10, 38px);
+    gap: 3px;
+    user-select: none;
+    margin-bottom: 10px;
+  }
+
+  .cell {
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+    border-radius: 5px;
+    cursor: pointer;
+    border: 1px solid #3a3a5c;
+    background: #252545;
+    position: relative;
+    overflow: hidden;
+    transition: background 0.1s;
+  }
+  .cell:hover:not(.revealed):not(.exploded):not(.mine-shown) { background: #2e2e60; }
+
+  .cell.revealed   { background: #12122a; border-color: #2a2a45; cursor: default; }
+  .cell.flagged    { background: rgba(220,60,60,0.12); border-color: rgba(220,60,60,0.4); }
+  .cell.flag-correct { background: rgba(40,160,80,0.20); border-color: rgba(40,160,80,0.55); }
+  .cell.flag-wrong   { background: rgba(180,40,40,0.22); border-color: rgba(180,40,40,0.55); }
+  .cell.exploded   { background: #8b0000; border-color: #cc0000; }
+  .cell.mine-shown { background: #3a3000; border-color: #8b7000; }
+
+  /* ghost layer behind flag */
+  .ghost {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    z-index: 1;
+  }
+  .ghost-num { font-size: 18px; font-weight: 700; opacity: 0.55; }
+  .icon { position: relative; z-index: 2; display: flex; align-items: center; justify-content: center; }
+
+  /* neighbour number colours */
+  .n1 { color: #5599ff; } .n2 { color: #44cc66; } .n3 { color: #ff5555; }
+  .n4 { color: #aa66ff; } .n5 { color: #ff8833; } .n6 { color: #33cccc; }
+  .n7 { color: #ffffff; } .n8 { color: #aaaaaa; }
+
+  /* ghost number colours (behind wrong flag) */
+  .gn0 { color: rgba(150,150,150,0.6); }
+  .gn1 { color: rgba(85,153,255,0.65); } .gn2 { color: rgba(68,204,102,0.65); }
+  .gn3 { color: rgba(255,85,85,0.65);  } .gn4 { color: rgba(170,102,255,0.65); }
+  .gn5 { color: rgba(255,136,51,0.65); } .gn6 { color: rgba(51,204,204,0.65); }
+  .gn7 { color: rgba(255,255,255,0.65);} .gn8 { color: rgba(180,180,180,0.65);}
+
+  /* ── floating panels ── */
+  .panel {
+    width: 340px;
+    background: #1e1e3a;
+    border: 1px solid #3a3a5c;
+    border-radius: 10px;
+    padding: 1rem 1.2rem;
+    margin-bottom: 10px;
+  }
+  .panel h3 { font-size: 15px; font-weight: 600; color: #ffffff; margin-bottom: 10px; }
+  .panel p  { font-size: 13px; color: #9090b0; line-height: 1.65; margin-bottom: 6px; }
+
+  .key {
+    display: inline-block;
+    background: #252545;
+    border: 1px solid #4a4a6c;
+    border-radius: 4px;
+    padding: 2px 8px;
+    font-size: 12px;
+    color: #c0c0e0;
+    font-weight: 600;
+    margin-right: 4px;
+  }
+
+  .instr-row { display: flex; align-items: center; gap: 6px; margin-bottom: 7px; font-size: 13px; color: #9090b0; }
+
+  .instr-note {
+    margin-top: 8px;
+    padding: 8px 10px;
+    background: #252545;
+    border-radius: 6px;
+    font-size: 12px;
+    color: #8080a0;
+    line-height: 1.7;
+  }
+  .instr-note b { color: #c0c0e0; }
+
+  /* leaderboard */
+  #lb-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 6px; }
+  #lb-table th { text-align: left; color: #6060a0; font-weight: 600; padding: 4px 8px; border-bottom: 1px solid #2e2e50; font-size: 12px; }
+  #lb-table td { padding: 7px 8px; border-bottom: 1px solid #22223a; color: #c0c0e0; }
+  #lb-table tr:last-child td { border-bottom: none; }
+
+  .rank-gold   { color: #d4aa00; font-weight: 700; }
+  .rank-silver { color: #909090; font-weight: 700; }
+  .rank-bronze { color: #a05020; font-weight: 700; }
+
+  .lb-empty { color: #5050a0; font-size: 12px; padding: 10px 8px; }
+
+  /* register */
+  #reg-area { display: flex; gap: 6px; align-items: center; margin-top: 10px; }
+  #reg-input {
+    flex: 1;
+    padding: 7px 10px;
+    border-radius: 6px;
+    border: 1px solid #3a3a5c;
+    background: #252545;
+    color: #e0e0e0;
+    font-size: 13px;
+    font-family: Arial, sans-serif;
+    outline: none;
+  }
+  #reg-input:focus { border-color: #4a7acc; }
+  #reg-msg { font-size: 12px; color: #6090c0; margin-top: 6px; min-height: 16px; }
+
+  #legend { font-size: 11px; color: #4a4a7a; text-align: center; line-height: 1.8; margin-top: 4px; }
+</style>
+</head>
+<body>
+
+<h1>💣 Minesweeper</h1>
+<p class="subtitle">Built on Boolean Algebra — CIA-1</p>
+
+<!-- top bar -->
+<div id="topbar">
+  <button id="btn-new">🔄 New game</button>
+  <button id="btn-instructions">📖 Instructions</button>
+  <button id="btn-leaderboard">🏆 Leaderboard</button>
+</div>
+
+<!-- instructions panel -->
+<div class="panel" id="panel-instructions" style="display:none">
+  <h3>How to play</h3>
+  <div class="instr-row"><span class="key">Left click</span> Reveal a cell</div>
+  <div class="instr-row"><span class="key">Right click</span> Place or remove a flag 🚩</div>
+  <p>The number on a revealed cell = count of bombs in its 8 neighbours (sum of boolean isMine values).</p>
+  <p>Flag all bombs. Reveal every safe cell to win. Click a bomb = game over.</p>
+  <div class="instr-note">
+    <b>At game over:</b><br>
+    🟢 Green flag = correct (bomb was there, ghost bomb shown behind)<br>
+    🔴 Red flag = wrong (neighbour count shown behind the flag)<br>
+    🟡 Amber = unfound bomb you missed
+  </div>
+  <div class="instr-note" style="margin-top:6px">
+    <b>Boolean algebra used:</b><br>
+    isMine, isRevealed, isFlagged → each is 0 or 1<br>
+    Guard: <code>isRevealed | isFlagged</code> (OR)<br>
+    Win:  <code>isMine | isRevealed = 1</code> for ALL cells (AND)<br>
+    Flag toggle: <code>isFlagged ^= 1</code> (XOR)<br>
+    Mine count: sum of 8 boolean isMine neighbours
+  </div>
+</div>
+
+<!-- leaderboard panel -->
+<div class="panel" id="panel-leaderboard" style="display:none">
+  <h3>Leaderboard — top 5</h3>
+  <table id="lb-table">
+    <thead>
+      <tr><th>#</th><th>Player</th><th>Time</th></tr>
+    </thead>
+    <tbody id="lb-body">
+      <tr><td colspan="3" class="lb-empty">No entries yet. Win a game to get on the board!</td></tr>
+    </tbody>
+  </table>
+  <div id="reg-area">
+    <input id="reg-input" type="text" placeholder="Your name" maxlength="20"/>
+    <button id="reg-btn">Register</button>
+  </div>
+  <div id="reg-msg"></div>
+</div>
+
+<!-- info bar -->
+<div id="info">
+  <span>💣 <span id="mine-count">10</span></span>
+  <span id="status">Left-click reveal · Right-click flag</span>
+  <span>⏱ <span id="timer">0</span>s</span>
+</div>
+
+<!-- game grid -->
+<div id="grid"></div>
+
+<div id="legend">
+  10 × 10 grid · 10 bombs · 1 attempt
+</div>
+
+<script>
+/*
+  ============================================================
+  MINESWEEPER — BOOLEAN ALGEBRA IMPLEMENTATION
+  CIA-1
+
+  Core principle:
+    Every cell has exactly 3 boolean variables:
+      isMine[i]     ∈ {0, 1}
+      isRevealed[i] ∈ {0, 1}
+      isFlagged[i]  ∈ {0, 1}
+
+  All game logic uses boolean operations:
+    AND  (&)   — both conditions must be true
+    OR   (|)   — at least one condition true
+    NOT  (!)   — invert boolean
+    XOR  (^)   — toggle between 0 and 1
+
+  Mine neighbour count = arithmetic sum of boolean isMine values
+    e.g. 0+1+0+1+0+0+1+0 = 3
+  ============================================================
+*/
+
+/* ── constants ── */
+var ROWS  = 10;
+var COLS  = 10;
+var MINES = 10;
+var N     = ROWS * COLS;   /* total cells */
+
+/* ── boolean state arrays (Uint8Array = array of 0s and 1s) ── */
+var isMine;      /* isMine[i]     = 1 if cell i has a mine,     else 0 */
+var isRevealed;  /* isRevealed[i] = 1 if cell i is revealed,    else 0 */
+var isFlagged;   /* isFlagged[i]  = 1 if cell i is flagged,     else 0 */
+
+/* ── game state (also boolean where possible) ── */
+var gameOver   = 0;   /* boolean: 1 = game has ended        */
+var gameWon    = 0;   /* boolean: 1 = player won            */
+var firstClick = 1;   /* boolean: 1 = no click yet          */
+var elapsed    = 0;
+var timerID    = null;
+var pendingTime = null;  /* time of last win, waiting for registration */
+
+/* ── leaderboard (array of {name, time} objects, max 5) ── */
+var leaderboard = [];
+
+/* ===========================================================
+   HELPER: flat index from row, col
+   =========================================================== */
+function idx(r, c) {
+  return r * COLS + c;
+}
+
+/* ===========================================================
+   HELPER: get all valid neighbour indices of cell (r, c)
+   Returns array of flat indices
+   =========================================================== */
+function getNeighbours(r, c) {
+  var ns = [];
+  for (var dr = -1; dr <= 1; dr++) {
+    for (var dc = -1; dc <= 1; dc++) {
+      /* boolean OR skip: skip (0,0) which is the cell itself */
+      if ((dr === 0) & (dc === 0)) continue;
+      var nr = r + dr;
+      var nc = c + dc;
+      /* boolean AND: all bounds must be valid */
+      var inBounds = (nr >= 0) & (nr < ROWS) & (nc >= 0) & (nc < COLS);
+      if (inBounds) ns.push(idx(nr, nc));
+    }
+  }
+  return ns;
+}
+
+/* ===========================================================
+   BOOLEAN SUM: count mines in neighbours of (r, c)
+   This is the core boolean algebra operation —
+   each isMine[i] is 0 or 1, so their sum = mine count
+   =========================================================== */
+function countNeighbourMines(r, c) {
+  var ns = getNeighbours(r, c);
+  var count = 0;
+  for (var i = 0; i < ns.length; i++) {
+    count = count + isMine[ns[i]];  /* boolean addition: 0+0=0, 0+1=1, 1+1=2 */
+  }
+  return count;
+}
+
+/* ===========================================================
+   COUNT FLAGS on board (boolean sum of isFlagged array)
+   =========================================================== */
+function countFlags() {
+  var f = 0;
+  for (var i = 0; i < N; i++) {
+    f = f + isFlagged[i];  /* boolean sum */
+  }
+  return f;
+}
+
+/* ===========================================================
+   MINE PLANTING
+   Safe zone = clicked cell + its 8 neighbours
+   Uses boolean NOT to avoid placing on existing mines
+   =========================================================== */
+function plantMines(safeR, safeC) {
+  /* build safe set using boolean membership */
+  var safeSet = new Array(N);
+  for (var i = 0; i < N; i++) safeSet[i] = 0;  /* boolean: 0 = not safe */
+
+  safeSet[idx(safeR, safeC)] = 1;  /* clicked cell is safe */
+  var ns = getNeighbours(safeR, safeC);
+  for (var j = 0; j < ns.length; j++) {
+    safeSet[ns[j]] = 1;  /* neighbours are safe */
+  }
+
+  var placed = 0;
+  while (placed < MINES) {
+    var i = Math.floor(Math.random() * N);
+    /* boolean AND: can place only if NOT already mine AND NOT in safe zone */
+    var canPlace = (!isMine[i]) & (!safeSet[i]);
+    if (canPlace) {
+      isMine[i] = 1;
+      placed++;
+    }
+  }
+}
+
+/* ===========================================================
+   REVEAL CELL — iterative flood-fill using a queue
+   Uses boolean guards to skip invalid cells
+   =========================================================== */
+function revealCell(startR, startC) {
+  var queue = [[startR, startC]];
+
+  while (queue.length > 0) {
+    var current = queue.shift();
+    var cr = current[0];
+    var cc = current[1];
+    var i  = idx(cr, cc);
+
+    /* boolean OR guard: skip if already revealed OR flagged */
+    if (isRevealed[i] | isFlagged[i]) continue;
+
+    isRevealed[i] = 1;  /* set boolean to true */
+
+    if (isMine[i]) {
+      /* hit a mine — boolean flip game state */
+      gameOver = 1;
+      clearInterval(timerID);
+      showEndState();
+      document.getElementById('status').textContent = '💥 Boom! Game over.';
+      return;
+    }
+
+    /* boolean zero check: if no neighbours are mines, enqueue all neighbours */
+    if (countNeighbourMines(cr, cc) === 0) {
+      var ns2 = getNeighbours(cr, cc);
+      for (var k = 0; k < ns2.length; k++) {
+        var ni = ns2[k];
+        /* boolean OR: skip if revealed OR flagged */
+        if (!isRevealed[ni] & !isFlagged[ni]) {
+          queue.push([Math.floor(ni / COLS), ni % COLS]);
+        }
+      }
+    }
+  }
+
+  checkWin();
+}
+
+/* ===========================================================
+   WIN CHECK
+   Boolean AND across entire board:
+   Every cell must satisfy: isMine[i] OR isRevealed[i] = 1
+   (each cell is either a mine or has been safely revealed)
+   =========================================================== */
+function checkWin() {
+  var allDone = 1;  /* start with boolean true */
+  for (var i = 0; i < N; i++) {
+    /* boolean OR: cell is "done" if it's a mine OR revealed */
+    var cellDone = isMine[i] | isRevealed[i];
+    /* boolean AND: all cells must be done */
+    allDone = allDone & cellDone;
+  }
+
+  if (allDone) {
+    gameWon  = 1;   /* boolean true */
+    gameOver = 1;   /* boolean true */
+    clearInterval(timerID);
+    pendingTime = elapsed;
+    document.getElementById('status').textContent =
+      '🎉 You win! ' + elapsed + 's — open Leaderboard to register.';
+    showEndState();
+  }
+}
+
+/* ===========================================================
+   SHOW END STATE — reveal truth behind all flags
+   =========================================================== */
+function showEndState() {
+  for (var r = 0; r < ROWS; r++) {
+    for (var c = 0; c < COLS; c++) {
+      var i  = idx(r, c);
+      var el = document.querySelector('[data-i="' + i + '"]');
+      if (!el) continue;
+
+      /* boolean AND: unflagged mine */
+      var isUnflaggedMine = isMine[i] & (!isFlagged[i]);
+      /* boolean AND: correct flag (flagged AND is mine) */
+      var isCorrectFlag = isFlagged[i] & isMine[i];
+      /* boolean AND: wrong flag (flagged AND NOT mine) */
+      var isWrongFlag = isFlagged[i] & (!isMine[i]);
+
+      if (isUnflaggedMine) {
+        if (isRevealed[i]) {
+          /* the bomb that was clicked */
+          el.className = 'cell exploded';
+          el.innerHTML = '<div class="icon">' + bombSVG('#ffffff', 26) + '</div>';
+        } else {
+          /* missed bomb */
+          el.className = 'cell mine-shown';
+          el.innerHTML = '<div class="icon">' + bombSVG('#e8c84a', 26) + '</div>';
+        }
+      } else if (isCorrectFlag) {
+        /* green: flag was right — show ghost bomb behind flag */
+        el.className = 'cell flag-correct';
+        el.innerHTML =
+          '<div class="ghost" style="opacity:0.55">' + bombSVG('#2ecc71', 28) + '</div>' +
+          '<div class="icon">' + flagSVG() + '</div>';
+      } else if (isWrongFlag) {
+        /* red: flag was wrong — show neighbour number behind flag */
+        var n = countNeighbourMines(r, c);
+        el.className = 'cell flag-wrong';
+        el.innerHTML =
+          '<div class="ghost"><span class="ghost-num gn' + n + '">' + n + '</span></div>' +
+          '<div class="icon">' + flagSVG() + '</div>';
+      }
+    }
+  }
+}
+
+/* ===========================================================
+   LEADERBOARD OPERATIONS (boolean-style logic)
+   =========================================================== */
+
+/* insert a new score and keep only top 5 sorted by time */
+function addScore(name, time) {
+  leaderboard.push({ name: name, time: time });
+
+  /* sort ascending by time (fastest first) */
+  leaderboard.sort(function(a, b) { return a.time - b.time; });
+
+  /* boolean cap: keep only 5 entries */
+  var overLimit = leaderboard.length > 5;  /* boolean */
+  if (overLimit) {
+    leaderboard = leaderboard.slice(0, 5);
+  }
+
+  renderLeaderboard();
+}
+
+/* render leaderboard table */
+function renderLeaderboard() {
+  var tbody = document.getElementById('lb-body');
+
+  /* boolean: is leaderboard empty? */
+  var isEmpty = (leaderboard.length === 0);  /* boolean */
+  if (isEmpty) {
+    tbody.innerHTML = '<tr><td colspan="3" class="lb-empty">No entries yet. Win a game to get on the board!</td></tr>';
+    return;
+  }
+
+  var rankSymbols = ['🥇', '🥈', '🥉', '4', '5'];
+  var rankClasses = ['rank-gold', 'rank-silver', 'rank-bronze', '', ''];
+  var html = '';
+
+  for (var i = 0; i < leaderboard.length; i++) {
+    var entry = leaderboard[i];
+    var symbol = rankSymbols[i];
+    var cls    = rankClasses[i];
+    html += '<tr>';
+    html += '<td class="' + cls + '">' + symbol + '</td>';
+    html += '<td>' + entry.name + '</td>';
+    html += '<td>' + entry.time + 's</td>';
+    html += '</tr>';
+  }
+
+  tbody.innerHTML = html;
+}
+
+/* register button handler */
+document.getElementById('reg-btn').addEventListener('click', function() {
+  var name = document.getElementById('reg-input').value.trim();
+  var msg  = document.getElementById('reg-msg');
+
+  /* boolean: name empty? */
+  var hasName = (name.length > 0);  /* boolean */
+  if (!hasName) {
+    msg.textContent = 'Enter your name first.';
+    return;
+  }
+
+  /* boolean: is there a pending win time? */
+  var hasPendingTime = (pendingTime !== null);  /* boolean */
+  if (!hasPendingTime) {
+    msg.textContent = 'Win a game first, then register your score.';
+    return;
+  }
+
+  addScore(name, pendingTime);
+  pendingTime = null;  /* clear pending time (boolean reset) */
+  document.getElementById('reg-input').value = '';
+  msg.textContent = name + ' registered with ' +
+    leaderboard.find(function(e){ return e.name === name; }).time + 's!';
+  setTimeout(function() { msg.textContent = ''; }, 3000);
+});
+
+/* ===========================================================
+   PANEL TOGGLE
+   Uses boolean to track open/closed state
+   =========================================================== */
+function togglePanel(name) {
+  var panels = ['instructions', 'leaderboard'];
+  for (var p = 0; p < panels.length; p++) {
+    var panelName = panels[p];
+    var el  = document.getElementById('panel-' + panelName);
+    var btn = document.getElementById('btn-' + panelName);
+
+    /* boolean: is this the panel we clicked? */
+    var isTarget = (panelName === name);  /* boolean */
+
+    if (isTarget) {
+      /* boolean XOR-style toggle: hidden → show, shown → hide */
+      var isHidden = (el.style.display === 'none');  /* boolean */
+      el.style.display  = isHidden ? 'block' : 'none';
+      /* boolean: active class = isHidden (was hidden, now shown) */
+      if (isHidden) { btn.classList.add('active'); }
+      else          { btn.classList.remove('active'); }
+    } else {
+      /* close other panels */
+      el.style.display = 'none';
+      btn.classList.remove('active');
+    }
+  }
+
+  /* refresh leaderboard whenever its panel opens */
+  if (name === 'leaderboard') renderLeaderboard();
+}
+
+document.getElementById('btn-instructions').addEventListener('click', function() { togglePanel('instructions'); });
+document.getElementById('btn-leaderboard').addEventListener('click',  function() { togglePanel('leaderboard'); });
+
+/* ===========================================================
+   INIT / NEW GAME
+   =========================================================== */
+function initGame() {
+  /* reset all boolean arrays to 0 */
+  isMine     = new Uint8Array(N);  /* all 0 */
+  isRevealed = new Uint8Array(N);  /* all 0 */
+  isFlagged  = new Uint8Array(N);  /* all 0 */
+
+  /* reset boolean game state */
+  gameOver   = 0;
+  gameWon    = 0;
+  firstClick = 1;
+  elapsed    = 0;
+  clearInterval(timerID);
+
+  document.getElementById('timer').textContent     = '0';
+  document.getElementById('mine-count').textContent = MINES;
+  document.getElementById('status').textContent     = 'Left-click reveal · Right-click flag';
+
+  buildGrid();
+}
+
+/* ===========================================================
+   BUILD GRID — create DOM cells
+   =========================================================== */
+function buildGrid() {
+  var grid = document.getElementById('grid');
+  grid.innerHTML = '';
+
+  for (var r = 0; r < ROWS; r++) {
+    for (var c = 0; c < COLS; c++) {
+      var cell = document.createElement('div');
+      cell.className  = 'cell';
+      cell.dataset.r  = r;
+      cell.dataset.c  = c;
+      cell.dataset.i  = idx(r, c);
+      cell.addEventListener('click', onLeftClick);
+      cell.addEventListener('contextmenu', onRightClick);
+      grid.appendChild(cell);
+    }
+  }
+}
+
+/* ===========================================================
+   CELL APPEARANCE during gameplay
+   =========================================================== */
+function getCellHTML(i, r, c) {
+  /* boolean: is revealed? */
+  if (isRevealed[i]) {
+    var n = countNeighbourMines(r, c);
+    var numHTML = (n > 0) ? '<span class="n' + n + '">' + n + '</span>' : '';
+    return { cls: 'cell revealed', html: numHTML };
+  }
+
+  /* boolean: is flagged? — plain flag, no spoilers during play */
+  if (isFlagged[i]) {
+    return { cls: 'cell flagged', html: '<div class="icon">' + flagSVG() + '</div>' };
+  }
+
+  return { cls: 'cell', html: '' };
+}
+
+/* update a single cell's DOM */
+function updateCell(r, c) {
+  var i  = idx(r, c);
+  var el = document.querySelector('[data-i="' + i + '"]');
+  if (!el) return;
+  var result = getCellHTML(i, r, c);
+  el.className = result.cls;
+  el.innerHTML = result.html;
+}
+
+/* update all cells */
+function updateAllCells() {
+  for (var r = 0; r < ROWS; r++) {
+    for (var c = 0; c < COLS; c++) {
+      updateCell(r, c);
+    }
+  }
+}
+
+/* ===========================================================
+   CLICK HANDLERS
+   =========================================================== */
+function onLeftClick() {
+  var r = parseInt(this.dataset.r);
+  var c = parseInt(this.dataset.c);
+  var i = parseInt(this.dataset.i);
+
+  /* boolean OR guard: do nothing if game over OR revealed OR flagged */
+  if (gameOver | isRevealed[i] | isFlagged[i]) return;
+
+  /* first click: plant mines (guaranteed safe first click) */
+  if (firstClick) {
+    firstClick = 0;  /* boolean false */
+    plantMines(r, c);
+    timerID = setInterval(function() {
+      elapsed++;
+      document.getElementById('timer').textContent = elapsed;
+    }, 1000);
+  }
+
+  revealCell(r, c);
+
+  /* boolean NOT: only update grid if game is still running */
+  if (!gameOver) updateAllCells();
+}
+
+function onRightClick(e) {
+  e.preventDefault();
+  var r = parseInt(this.dataset.r);
+  var c = parseInt(this.dataset.c);
+  var i = parseInt(this.dataset.i);
+
+  /* boolean OR guard: do nothing if game over OR already revealed */
+  if (gameOver | isRevealed[i]) return;
+
+  /* boolean XOR toggle: 0 → 1, 1 → 0 */
+  isFlagged[i] = isFlagged[i] ^ 1;
+
+  /* update mine counter: MINES minus boolean sum of all flags */
+  document.getElementById('mine-count').textContent = MINES - countFlags();
+
+  updateCell(r, c);
+}
+
+/* ===========================================================
+   SVG HELPERS — bomb and flag icons
+   =========================================================== */
+function bombSVG(color, size) {
+  size  = size  || 26;
+  color = color || '#e8c84a';
+  return '<svg width="' + size + '" height="' + size + '" viewBox="0 0 26 26" xmlns="http://www.w3.org/2000/svg">' +
+    '<path d="M15 6 Q18 3 20 5" stroke="#8B4513" stroke-width="1.8" fill="none" stroke-linecap="round"/>' +
+    '<circle cx="20" cy="4.5" r="1.5" fill="#f39c12"/>' +
+    '<line x1="20" y1="3" x2="21" y2="1.5" stroke="#f39c12" stroke-width="1" stroke-linecap="round"/>' +
+    '<line x1="21.5" y1="4.5" x2="23" y2="4" stroke="#f39c12" stroke-width="1" stroke-linecap="round"/>' +
+    '<line x1="20.5" y1="6" x2="22" y2="7" stroke="#f39c12" stroke-width="1" stroke-linecap="round"/>' +
+    '<circle cx="12.5" cy="15" r="8.5" fill="' + color + '"/>' +
+    '<ellipse cx="10" cy="12" rx="2.5" ry="1.8" fill="rgba(255,255,255,0.38)" transform="rotate(-30 10 12)"/>' +
+    '<line x1="3.5" y1="15" x2="1" y2="15" stroke="' + color + '" stroke-width="2" stroke-linecap="round"/>' +
+    '<line x1="21.5" y1="15" x2="24" y2="15" stroke="' + color + '" stroke-width="2" stroke-linecap="round"/>' +
+    '<line x1="12.5" y1="6.5" x2="12.5" y2="4" stroke="' + color + '" stroke-width="2" stroke-linecap="round"/>' +
+    '<line x1="12.5" y1="23.5" x2="12.5" y2="25.5" stroke="' + color + '" stroke-width="2" stroke-linecap="round"/>' +
+    '</svg>';
+}
+
+function flagSVG() {
+  return '<svg width="20" height="22" viewBox="0 0 22 24" xmlns="http://www.w3.org/2000/svg">' +
+    '<line x1="5" y1="2" x2="5" y2="22" stroke="#cc3333" stroke-width="2.2" stroke-linecap="round"/>' +
+    '<polygon points="5,3 18,8 5,13" fill="#ee4444"/>' +
+    '<line x1="3" y1="22" x2="9" y2="22" stroke="#888" stroke-width="2" stroke-linecap="round"/>' +
+    '</svg>';
+}
+
+/* ===========================================================
+   BOOT
+   =========================================================== */
+document.getElementById('btn-new').addEventListener('click', initGame);
+initGame();
+</script>
+</body>
+</html>
