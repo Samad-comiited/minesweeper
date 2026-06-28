@@ -1,0 +1,2301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Minesweeper — How It Works</title>
+<style>
+/* ── Reset & Base ── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0D0D1F;
+  --surface:#13132B;
+  --surface2:#1A1A38;
+  --surface3:#22224A;
+  --border:#2E2E58;
+  --border2:#3A3A6A;
+  --accent:#7B6FFF;
+  --accent2:#A084FF;
+  --blue:#4DA6FF;
+  --green:#44DD88;
+  --red:#FF5566;
+  --orange:#FF9944;
+  --yellow:#FFD166;
+  --text:#E8E8FF;
+  --text2:#9090C0;
+  --text3:#5C5C90;
+  --cell:#252550;
+  --cell-h:#2E2E5E;
+  --cell-r:#181835;
+  --mine-bg:#3D0F1F;
+  --radius:10px;
+  --font-body:'Segoe UI',system-ui,sans-serif;
+  --font-mono:'Cascadia Code','Fira Code','Consolas',monospace;
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--font-body);line-height:1.6;overflow-x:hidden}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:var(--surface)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+
+/* ── Nav ── */
+nav{position:sticky;top:0;z-index:100;background:rgba(13,13,31,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 2rem}
+.nav-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;gap:2rem;height:54px}
+.nav-logo{font-weight:700;font-size:15px;color:var(--text);display:flex;align-items:center;gap:6px;text-decoration:none}
+.nav-links{display:flex;gap:4px;margin-left:auto}
+.nav-links a{color:var(--text2);font-size:13px;text-decoration:none;padding:5px 12px;border-radius:6px;transition:all .15s}
+.nav-links a:hover{background:var(--surface2);color:var(--text)}
+.nav-links a.active{background:var(--surface3);color:var(--accent2)}
+
+/* ── Sections ── */
+.section{max-width:1100px;margin:0 auto;padding:80px 2rem}
+.section-label{font-size:11px;font-weight:600;letter-spacing:.12em;color:var(--accent);text-transform:uppercase;margin-bottom:10px}
+.section-title{font-size:clamp(26px,4vw,38px);font-weight:700;line-height:1.2;margin-bottom:14px}
+.section-sub{font-size:16px;color:var(--text2);max-width:600px;line-height:1.7}
+.divider{border:none;border-top:1px solid var(--border);margin:0}
+
+/* ── Hero ── */
+#hero{min-height:100vh;display:flex;align-items:center;position:relative;overflow:hidden}
+.hero-bg{position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 60% 40%,rgba(123,111,255,.08) 0%,transparent 70%);pointer-events:none}
+.hero-grid{display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center;width:100%}
+.hero-badge{display:inline-flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--border2);border-radius:20px;padding:5px 14px;font-size:12px;color:var(--accent2);margin-bottom:20px}
+.hero-title{font-size:clamp(32px,5vw,52px);font-weight:800;line-height:1.1;margin-bottom:16px}
+.hero-title span{background:linear-gradient(135deg,var(--accent),var(--blue));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-desc{font-size:16px;color:var(--text2);line-height:1.75;margin-bottom:28px}
+.hero-btns{display:flex;gap:12px;flex-wrap:wrap}
+.btn-primary{background:var(--accent);color:#fff;border:none;padding:11px 22px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;transition:all .15s;text-decoration:none;display:inline-flex;align-items:center;gap:7px}
+.btn-primary:hover{background:var(--accent2);transform:translateY(-1px)}
+.btn-secondary{background:transparent;color:var(--text);border:1px solid var(--border2);padding:11px 22px;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;transition:all .15s;text-decoration:none;display:inline-flex;align-items:center;gap:7px}
+.btn-secondary:hover{background:var(--surface2);border-color:var(--accent)}
+
+/* ── Mini board preview in hero ── */
+.mini-board{display:grid;grid-template-columns:repeat(6,44px);gap:3px;padding:16px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius)}
+.mini-cell{width:44px;height:44px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;cursor:default;transition:all .2s;border:1px solid var(--border)}
+.mc-hidden{background:var(--cell);border-color:var(--border2)}
+.mc-revealed{background:var(--cell-r);border-color:var(--border);color:var(--blue)}
+.mc-mine{background:var(--mine-bg);border-color:#6B1A2A}
+.mc-flag{background:var(--cell);border-color:var(--border2)}
+.mc-n1{color:#5599FF}.mc-n2{color:#44DD88}.mc-n3{color:#FF6655}.mc-n4{color:#AA66FF}.mc-n5{color:#FFAA44}
+.pulse{animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+
+/* ── Cards ── */
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin-top:32px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem}
+.card-icon{font-size:28px;margin-bottom:12px}
+.card h3{font-size:15px;font-weight:600;margin-bottom:8px}
+.card p{font-size:13px;color:var(--text2);line-height:1.65}
+
+/* ── Tabs ── */
+.tab-bar{display:flex;gap:4px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:4px;margin-bottom:28px;flex-wrap:wrap}
+.tab-btn{padding:8px 18px;border:none;background:transparent;color:var(--text2);font-size:13px;font-family:var(--font-body);font-weight:500;border-radius:7px;cursor:pointer;transition:all .15s;white-space:nowrap}
+.tab-btn.active{background:var(--surface3);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.tab-panel{display:none}.tab-panel.active{display:block}
+
+/* ── Interactive demo ── */
+#demo-board{display:grid;grid-template-columns:repeat(10,46px);gap:3px;margin:0 auto;width:max-content}
+.demo-cell{width:46px;height:46px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:700;cursor:pointer;border:1px solid var(--border2);background:var(--cell);transition:background .12s,transform .08s;user-select:none;position:relative}
+.demo-cell:hover:not(.revealed):not(.mine-exploded){background:var(--cell-h);transform:scale(1.05)}
+.demo-cell.revealed{background:var(--cell-r);border-color:var(--border);cursor:default;transform:none}
+.demo-cell.flagged{background:var(--cell)}
+.demo-cell.mine-exploded{background:var(--mine-bg);border-color:#7B1A2A;animation:shake .3s ease}
+.demo-cell.mine-shown{background:#2A0D18;border-color:#5A1525}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-3px)}75%{transform:translateX(3px)}}
+@keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.15)}100%{transform:scale(1)}}
+.demo-cell.pop{animation:pop .2s ease}
+
+.demo-wrap{display:flex;gap:32px;align-items:flex-start;flex-wrap:wrap}
+.demo-panel{flex:1;min-width:300px}
+.demo-sidebar{width:260px;flex-shrink:0}
+
+.demo-hud{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 16px}
+.hud-item{display:flex;align-items:center;gap:6px;font-size:14px;font-weight:600}
+.hud-mine{color:var(--red)}
+.hud-timer{color:var(--blue)}
+.hud-status{font-size:12px;color:var(--text2)}
+
+.event-log{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px;height:200px;overflow-y:auto;font-size:12px;font-family:var(--font-mono)}
+.log-entry{padding:3px 0;border-bottom:1px solid var(--border);color:var(--text2)}
+.log-entry:last-child{border-bottom:none}
+.log-entry .log-type{font-weight:600;margin-right:6px}
+.log-left .log-type{color:var(--blue)}
+.log-right .log-type{color:var(--orange)}
+.log-reveal .log-type{color:var(--green)}
+.log-mine .log-type{color:var(--red)}
+.log-win .log-type{color:var(--yellow)}
+.log-bfs .log-type{color:var(--accent2)}
+
+.legend{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:14px}
+.legend-row{display:flex;align-items:center;gap:10px;padding:4px 0;font-size:12px;color:var(--text2)}
+.legend-cell{width:22px;height:22px;border-radius:4px;border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0}
+
+/* ── Boolean section ── */
+.bool-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:24px}
+.bool-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem;position:relative;overflow:hidden}
+.bool-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.bool-card.and::before{background:linear-gradient(90deg,var(--blue),var(--green))}
+.bool-card.or::before{background:linear-gradient(90deg,var(--orange),var(--yellow))}
+.bool-card.not::before{background:linear-gradient(90deg,var(--red),var(--accent))}
+.bool-card.xor::before{background:linear-gradient(90deg,var(--accent),var(--blue))}
+.bool-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:6px}
+.bool-op{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:4px;margin-bottom:10px}
+.and .bool-op{background:rgba(77,166,255,.15);color:var(--blue)}
+.or .bool-op{background:rgba(255,153,68,.15);color:var(--orange)}
+.not .bool-op{background:rgba(255,85,102,.15);color:var(--red)}
+.xor .bool-op{background:rgba(123,111,255,.15);color:var(--accent2)}
+.bool-desc{font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.6}
+.truth-table{width:100%;border-collapse:collapse;font-size:11px;font-family:var(--font-mono)}
+.truth-table th{background:var(--surface3);color:var(--text2);padding:5px 8px;text-align:center;border:1px solid var(--border)}
+.truth-table td{padding:5px 8px;text-align:center;border:1px solid var(--border);color:var(--text)}
+.truth-table td.T{color:var(--green);font-weight:600}
+.truth-table td.F{color:var(--red)}
+.truth-table tr:nth-child(even){background:var(--surface2)}
+
+.bool-rule{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 16px;margin-bottom:10px;display:flex;align-items:flex-start;gap:12px}
+.bool-rule-code{font-family:var(--font-mono);font-size:12px;color:var(--accent2);line-height:1.8}
+.bool-rule-desc{font-size:12px;color:var(--text2);margin-top:4px;line-height:1.5}
+.bool-icon{font-size:20px;flex-shrink:0;margin-top:2px}
+
+/* ── Interactive boolean demo ── */
+.bool-demo{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;margin-top:24px}
+.bool-demo h3{font-size:14px;font-weight:600;margin-bottom:16px;color:var(--text)}
+.toggle-row{display:flex;align-items:center;gap:12px;margin-bottom:10px;flex-wrap:wrap}
+.toggle-label{font-size:13px;color:var(--text2);min-width:140px}
+.toggle-switch{position:relative;width:44px;height:24px;flex-shrink:0}
+.toggle-switch input{opacity:0;width:0;height:0}
+.toggle-slider{position:absolute;cursor:pointer;inset:0;background:var(--surface3);border:1px solid var(--border2);border-radius:12px;transition:.2s}
+.toggle-slider:before{content:'';position:absolute;width:18px;height:18px;left:2px;top:2px;background:var(--text3);border-radius:50%;transition:.2s}
+input:checked+.toggle-slider{background:rgba(123,111,255,.3);border-color:var(--accent)}
+input:checked+.toggle-slider:before{transform:translateX(20px);background:var(--accent)}
+.bool-result{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 16px;font-family:var(--font-mono);font-size:13px;margin-top:16px}
+.bool-result .result-label{color:var(--text3);font-size:11px;margin-bottom:4px}
+.bool-result .result-value{font-size:16px;font-weight:700}
+.result-true{color:var(--green)}
+.result-false{color:var(--red)}
+.bool-expr{color:var(--text2);font-size:12px;margin-top:6px}
+.bool-expr span{color:var(--accent2)}
+
+/* ── Code walkthrough ── */
+.code-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-top:24px}
+.code-header{background:var(--surface2);border-bottom:1px solid var(--border);padding:12px 16px;display:flex;align-items:center;gap:10px}
+.code-dots{display:flex;gap:5px}
+.code-dot{width:10px;height:10px;border-radius:50%}
+.code-dot.r{background:#FF5F57}.code-dot.y{background:#FEBC2E}.code-dot.g{background:#28C840}
+.code-filename{font-size:12px;color:var(--text2);font-family:var(--font-mono);margin-left:4px}
+.code-body{padding:0;overflow-x:auto}
+pre{padding:20px;font-family:var(--font-mono);font-size:13px;line-height:1.8;white-space:pre;tab-size:4;color:var(--text)}
+.kw{color:#CC99FF}.fn{color:#5DADE2}.cls{color:#F9C74F}.cm{color:#5C5C90;font-style:italic}.str{color:#A8D8A8}.num{color:#F4A261}.var{color:#C0E0FF}.op{color:#FF9944}.dec{color:#C0C0FF}
+
+/* Annotated code */
+.annotated-line{display:flex;gap:12px;position:relative;padding:2px 20px;cursor:pointer;transition:background .1s}
+.annotated-line:hover{background:rgba(123,111,255,.06)}
+.annotated-line.highlight{background:rgba(123,111,255,.12);border-left:2px solid var(--accent)}
+.line-num{color:var(--text3);font-size:12px;min-width:28px;text-align:right;user-select:none;flex-shrink:0}
+.line-code{font-size:13px;white-space:pre;flex:1}
+.line-annotation{display:none;font-size:12px;color:var(--yellow);background:rgba(255,209,102,.08);border:1px solid rgba(255,209,102,.2);border-radius:6px;padding:6px 10px;margin:4px 20px 8px 60px;line-height:1.5}
+.annotated-line.highlight + .line-annotation{display:block}
+.annotation-arrow{color:var(--yellow);margin-right:5px}
+
+/* ── Flow diagram ── */
+.flow-wrap{margin-top:28px;overflow-x:auto}
+.flow{display:flex;flex-direction:column;align-items:center;gap:0;min-width:360px}
+.flow-node{background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:12px 20px;text-align:center;font-size:13px;min-width:200px;position:relative}
+.flow-node.decision{background:rgba(123,111,255,.08);border-color:var(--accent);color:var(--text);clip-path:polygon(50% 0%,100% 50%,50% 100%,0% 50%);padding:20px 40px}
+.flow-node.start{background:rgba(68,221,136,.08);border-color:var(--green);color:var(--green);border-radius:24px}
+.flow-node.end-win{background:rgba(68,221,136,.08);border-color:var(--green);color:var(--green);border-radius:24px}
+.flow-node.end-lose{background:rgba(255,85,102,.08);border-color:var(--red);color:var(--red);border-radius:24px}
+.flow-node.action{background:rgba(77,166,255,.06);border-color:var(--blue)}
+.flow-arrow{display:flex;flex-direction:column;align-items:center;color:var(--text3);font-size:11px;gap:2px;margin:2px 0}
+.flow-arrow-line{width:2px;height:18px;background:var(--border2)}
+.flow-arrow-head{color:var(--border2);font-size:14px;margin-top:-4px}
+.flow-label{color:var(--text3);font-size:11px}
+.flow-branch{display:flex;align-items:flex-start;gap:20px;width:100%}
+.flow-branch-col{display:flex;flex-direction:column;align-items:center;flex:1;gap:0}
+
+/* ── BFS visualiser ── */
+.bfs-grid{display:grid;grid-template-columns:repeat(8,38px);gap:2px;margin:16px 0}
+.bfs-cell{width:38px;height:38px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;border:1px solid var(--border);background:var(--cell);transition:all .3s;cursor:default}
+.bfs-cell.bfs-empty{background:var(--cell-r);border-color:var(--border);color:transparent}
+.bfs-cell.bfs-queued{background:rgba(123,111,255,.25);border-color:var(--accent);color:var(--accent2)}
+.bfs-cell.bfs-visited{background:var(--cell-r);border-color:var(--border)}
+.bfs-cell.bfs-number{background:var(--cell-r);border-color:var(--border)}
+.bfs-cell.bfs-wall{background:var(--cell);border-color:var(--border2)}
+.bfs-cell.bfs-origin{background:rgba(68,221,136,.2);border-color:var(--green)}
+.bfs-controls{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.bfs-btn{background:var(--surface2);border:1px solid var(--border2);color:var(--text2);padding:7px 14px;border-radius:7px;font-size:12px;cursor:pointer;transition:all .15s}
+.bfs-btn:hover{background:var(--surface3);color:var(--text)}
+.bfs-btn.primary-btn{background:rgba(123,111,255,.2);border-color:var(--accent);color:var(--accent2)}
+.bfs-step-info{font-size:12px;color:var(--text2);background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-bottom:12px;font-family:var(--font-mono);min-height:44px}
+
+/* ── Variables explorer ── */
+.var-table{width:100%;border-collapse:collapse;margin-top:16px}
+.var-table th{background:var(--surface3);color:var(--text2);font-size:12px;font-weight:600;padding:10px 12px;text-align:left;border:1px solid var(--border)}
+.var-table td{padding:10px 12px;border:1px solid var(--border);font-size:13px;vertical-align:top}
+.var-table tr:nth-child(even) td{background:var(--surface2)}
+.var-name{font-family:var(--font-mono);color:var(--accent2);font-size:12px}
+.var-type{display:inline-block;font-size:10px;padding:2px 7px;border-radius:4px;font-weight:600}
+.type-bool{background:rgba(68,221,136,.15);color:var(--green)}
+.type-int{background:rgba(77,166,255,.15);color:var(--blue)}
+.type-list{background:rgba(255,153,68,.15);color:var(--orange)}
+.type-str{background:rgba(249,199,79,.15);color:var(--yellow)}
+.type-float{background:rgba(123,111,255,.15);color:var(--accent2)}
+.var-live{font-family:var(--font-mono);font-size:12px;color:var(--yellow);background:rgba(255,209,102,.08);border:1px solid rgba(255,209,102,.15);border-radius:4px;padding:2px 7px;display:inline-block}
+
+/* ── Progress / quiz ── */
+.quiz-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;margin-top:16px}
+.quiz-q{font-size:14px;font-weight:500;margin-bottom:14px}
+.quiz-opts{display:flex;flex-direction:column;gap:8px}
+.quiz-opt{background:var(--surface);color: var(--text);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:13px;cursor:pointer;transition:all .15s;text-align:left}
+.quiz-opt:hover{border-color:var(--accent);background:rgba(123,111,255,.06)}
+.quiz-opt.correct{border-color:var(--green);background:rgba(68,221,136,.08);color:var(--green)}
+.quiz-opt.wrong{border-color:var(--red);background:rgba(255,85,102,.08);color:var(--red)}
+.quiz-feedback{font-size:12px;margin-top:12px;padding:10px 14px;border-radius:8px;line-height:1.6;display:none}
+.quiz-feedback.show{display:block}
+.quiz-feedback.ok{background:rgba(68,221,136,.08);border:1px solid rgba(68,221,136,.2);color:var(--green)}
+.quiz-feedback.no{background:rgba(255,85,102,.08);border:1px solid rgba(255,85,102,.2);color:var(--red)}
+.quiz-nav{display:flex;justify-content:flex-end;margin-top:14px}
+
+/* ── Chip tags ── */
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.chip{font-size:11px;padding:4px 10px;border-radius:20px;font-weight:500}
+.chip-purple{background:rgba(123,111,255,.15);color:var(--accent2);border:1px solid rgba(123,111,255,.3)}
+.chip-blue{background:rgba(77,166,255,.15);color:var(--blue);border:1px solid rgba(77,166,255,.3)}
+.chip-green{background:rgba(68,221,136,.15);color:var(--green);border:1px solid rgba(68,221,136,.3)}
+.chip-orange{background:rgba(255,153,68,.15);color:var(--orange);border:1px solid rgba(255,153,68,.3)}
+
+/* ── Timeline ── */
+.timeline{margin-top:24px;position:relative;padding-left:28px}
+.timeline::before{content:'';position:absolute;left:10px;top:0;bottom:0;width:2px;background:var(--border)}
+.tl-item{position:relative;margin-bottom:28px}
+.tl-dot{position:absolute;left:-24px;top:4px;width:12px;height:12px;border-radius:50%;border:2px solid var(--accent);background:var(--bg)}
+.tl-title{font-size:14px;font-weight:600;margin-bottom:5px}
+.tl-body{font-size:13px;color:var(--text2);line-height:1.65}
+.tl-code{font-family:var(--font-mono);font-size:11px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:8px 12px;margin-top:8px;color:var(--accent2);white-space:pre-wrap}
+
+/* ── Glossary ── */
+.glossary-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin-top:20px}
+.glossary-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1rem}
+.glossary-term{font-family:var(--font-mono);font-size:12px;color:var(--accent2);margin-bottom:5px;font-weight:600}
+.glossary-def{font-size:12px;color:var(--text2);line-height:1.6}
+
+/* ── Callout box ── */
+.callout{border-radius:8px;padding:14px 16px;font-size:13px;line-height:1.65;margin:16px 0;display:flex;gap:10px}
+.callout-info{background:rgba(77,166,255,.08);border:1px solid rgba(77,166,255,.25)}
+.callout-tip{background:rgba(68,221,136,.08);border:1px solid rgba(68,221,136,.25)}
+.callout-warn{background:rgba(255,153,68,.08);border:1px solid rgba(255,153,68,.25)}
+.callout-icon{font-size:16px;flex-shrink:0;margin-top:1px}
+
+/* ── Source code inline tab — slide in ── */
+.tab-source-panel{animation:slideInTab .25s ease}
+@keyframes slideInTab{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:translateX(0)}}
+.src-multi-btn{background:var(--surface2);border:1px solid var(--border2);color:var(--text2);padding:4px 10px;border-radius:6px;font-size:11px;cursor:pointer;font-family:var(--font-mono);transition:all .15s}
+.src-multi-btn:hover{background:var(--surface3);color:var(--text)}
+.src-multi-btn.danger{border-color:var(--red);color:var(--red)}
+.src-multi-btn.danger:hover{background:rgba(255,85,102,.08)}
+/* ── Responsive ── */
+@media(max-width:700px){
+  .hero-grid{grid-template-columns:1fr}
+  .mini-board-wrap{display:none}
+  .bool-grid{grid-template-columns:1fr}
+  .demo-sidebar{width:100%}
+  #demo-board{grid-template-columns:repeat(10,36px)}
+  .demo-cell{width:36px;height:36px;font-size:14px}
+  .bfs-grid{grid-template-columns:repeat(8,32px)}
+  .bfs-cell{width:32px;height:32px}
+}
+</style>
+</head>
+<body>
+
+<!-- ── NAV ── -->
+<nav>
+  <div class="nav-inner">
+    <a class="nav-logo" href="#">💣 Minesweeper Guide</a>
+    <div class="nav-links">
+      <a href="#" onclick="event.preventDefault();document.getElementById('what').scrollIntoView({behavior:'smooth'})">What is it</a>
+      <a href="#" onclick="event.preventDefault();document.getElementById('demo').scrollIntoView({behavior:'smooth'})">Play it</a>
+      <a href="#" onclick="event.preventDefault();document.getElementById('code').scrollIntoView({behavior:'smooth'})">The code</a>
+      <a href="#" onclick="event.preventDefault();document.getElementById('boolean').scrollIntoView({behavior:'smooth'})">Boolean algebra</a>
+      <a href="#" onclick="event.preventDefault();document.getElementById('bfs').scrollIntoView({behavior:'smooth'})">Flood fill</a>
+      <a href="#" onclick="event.preventDefault();document.getElementById('quiz').scrollIntoView({behavior:'smooth'})">Quiz</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ── HERO ── -->
+<section id="hero" style="padding:0 2rem">
+  <div class="hero-bg"></div>
+  <div class="section" style="padding-top:0;padding-bottom:0;width:100%">
+  <div class="hero-grid">
+    <div>
+      <div class="hero-badge">💣 CIA-1 · Boolean Algebra Project</div>
+      <h1 class="hero-title">How does <span>Minesweeper</span> actually work?</h1>
+      <p class="hero-desc">A complete visual explainer — from what happens when you click a square, to how Boolean algebra controls every single decision in the game. No prior coding knowledge needed.</p>
+      <div class="hero-btns">
+        <button class="btn-primary" onclick="document.getElementById('demo').scrollIntoView({behavior:'smooth'})">▶ Play the demo</button>
+        <button class="btn-secondary" onclick="document.getElementById('what').scrollIntoView({behavior:'smooth'})">Start from scratch</button>
+      </div>
+      <div class="chips" style="margin-top:20px">
+        <span class="chip chip-purple">OOP · 2 Classes</span>
+        <span class="chip chip-blue">Boolean Algebra · 7 rules</span>
+        <span class="chip chip-green">BFS · Flood Fill</span>
+        <span class="chip chip-orange">Tkinter GUI</span>
+      </div>
+    </div>
+    <div class="mini-board-wrap" style="display:flex;justify-content:center">
+      <div>
+        <div class="mini-board" id="hero-board"></div>
+        <p style="font-size:11px;color:var(--text3);text-align:center;margin-top:8px">Live preview — hover over cells</p>
+      </div>
+    </div>
+  </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ── WHAT IS MINESWEEPER ── -->
+<section id="what" class="section">
+  <div class="section-label">Starting from zero</div>
+  <h2 class="section-title">What is Minesweeper?</h2>
+  <p class="section-sub">Minesweeper is a puzzle game where mines are hidden under a grid of squares. Your job: reveal every safe square without clicking a mine.</p>
+
+  <div class="card-grid" style="margin-top:32px">
+    <div class="card">
+      <div class="card-icon">🖱️</div>
+      <h3>Left-click → Reveal</h3>
+      <p>Clicking a square opens it. If it's a mine — game over. If it's safe, it shows how many mines are in the 8 surrounding squares (0–8). A 0 means no mines nearby, so the game auto-opens all neighbours too.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">🚩</div>
+      <h3>Right-click → Flag</h3>
+      <p>Right-clicking plants a flag on a square you think is a mine. Flagged squares can't be opened by accident. Right-clicking again removes the flag. The mine counter updates to show remaining mines.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">🏆</div>
+      <h3>How you win</h3>
+      <p>Reveal every single safe square. You don't need to flag all the mines — you just need to open every cell that isn't a mine. When the last safe cell opens, you win instantly.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">💣</div>
+      <h3>First click is always safe</h3>
+      <p>Mines are placed <em>after</em> your first click. The code keeps a "safe zone" — the cell you clicked plus its 8 neighbours — and never puts a mine in that zone. So your very first click always opens a nice big area.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">🔢</div>
+      <h3>What the numbers mean</h3>
+      <p>A revealed square shows a number 1–8. That number tells you exactly how many of the 8 squares touching it contain mines. Use this to logically deduce which squares are safe to click.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">⚡</div>
+      <h3>The flood fill shortcut</h3>
+      <p>When you reveal an empty square (shows nothing, no mines nearby), the game automatically opens all connected empty squares — sometimes revealing a huge area at once. This uses a BFS algorithm.</p>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ── LIVE DEMO ── -->
+<section id="demo" class="section">
+  <div class="section-label">Try it yourself</div>
+  <h2 class="section-title">Play the game — watch what happens</h2>
+  <p class="section-sub">Every action is logged below the board. See the exact boolean checks and function calls happening as you play.</p>
+
+  <div style="margin-top:32px" class="demo-wrap">
+    <div class="demo-panel">
+      <div class="demo-hud">
+        <div class="hud-item hud-mine">💣 <span id="d-mines">10</span></div>
+        <div class="hud-status" id="d-status">Click any square to start</div>
+        <div class="hud-item hud-timer">⏱ <span id="d-timer">0s</span></div>
+      </div>
+      <div id="demo-board"></div>
+      <div style="display:flex;gap:10px;margin-top:14px">
+        <button class="bfs-btn primary-btn" onclick="initDemo()">🔄 New game</button>
+        <button class="bfs-btn" onclick="autoPlay()">⚡ Auto-reveal safe area</button>
+      </div>
+    </div>
+    <div class="demo-sidebar">
+      <div class="legend">
+        <div style="font-size:12px;font-weight:600;margin-bottom:8px;color:var(--text)">Legend</div>
+        <div class="legend-row"><div class="legend-cell" style="background:var(--cell)"></div>Hidden — not yet revealed</div>
+        <div class="legend-row"><div class="legend-cell" style="background:var(--cell-h)"></div>Hovered — about to click</div>
+        <div class="legend-row"><div class="legend-cell" style="background:var(--cell-r)"></div>Revealed — safe, opened</div>
+        <div class="legend-row"><div class="legend-cell" style="background:var(--cell)">🚩</div>Flagged — marked as mine</div>
+        <div class="legend-row"><div class="legend-cell" style="background:var(--mine-bg)">💣</div>Mine — game over!</div>
+        <div class="legend-row"><div class="legend-cell" style="background:var(--cell-r);color:var(--blue);font-weight:700;font-size:11px">1</div>Number — adjacent mines</div>
+      </div>
+      <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:6px">Event log <span style="font-size:10px;color:var(--text3);font-weight:400">(what the code is doing)</span></div>
+      <div class="event-log" id="event-log">
+        <div class="log-entry"><span class="log-type" style="color:var(--text3)">READY</span> Game initialised. 10×10 board created, 100 Cell objects.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ── CODE WALKTHROUGH ── -->
+<section id="code" class="section">
+  <div class="section-label">Under the hood</div>
+  <h2 class="section-title">How the code is structured</h2>
+  <p class="section-sub">The game is split into two classes and about 19 functions. Click any highlighted line to see what it does.</p>
+
+  <div class="tab-bar" id="code-tab-bar" style="margin-top:32px">
+    <button class="tab-btn active" onclick="switchTab(this,'tab-classes')">Classes</button>
+    <button class="tab-btn" onclick="switchTab(this,'tab-vars')">Variables</button>
+    <button class="tab-btn" onclick="switchTab(this,'tab-funcs')">Functions</button>
+    <button class="tab-btn" onclick="switchTab(this,'tab-flow')">Game flow</button>
+    <button class="tab-btn tab-btn-src" onclick="switchTab(this,'tab-source-inline')" style="margin-left:auto;color:var(--accent2);border:1px solid rgba(123,111,255,.3);background:rgba(123,111,255,.08)">{ } Source Code</button>
+  </div>
+
+  <!-- CLASSES TAB -->
+  <div id="tab-classes" class="tab-panel active">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;flex-wrap:wrap">
+      <div class="card" style="border-color:var(--accent)">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+          <span style="font-size:22px">📦</span>
+          <div>
+            <div style="font-family:var(--font-mono);font-size:14px;color:var(--accent2);font-weight:600">class Cell</div>
+            <div style="font-size:11px;color:var(--text3)">Data container · 100 instances</div>
+          </div>
+        </div>
+        <p style="font-size:13px;color:var(--text2);line-height:1.65;margin-bottom:12px">A <strong>class</strong> is a template. <code style="font-size:11px;color:var(--accent2)">Cell</code> is a template for one board square. The game creates 100 copies — one per square. Each copy is called an <strong>instance</strong> and stores its own data.</p>
+        <div class="tl-code">class Cell:
+    is_mine         = False  # mine hiding here?
+    is_revealed     = False  # has player opened it?
+    is_flagged      = False  # player put a flag here?
+    neighbour_count = 0      # how many mines nearby?
+    canvas          = None   # the button widget</div>
+        <div class="callout callout-info" style="margin-top:12px"><span class="callout-icon">💡</span><span>No logic here — Cell only stores facts. Think of it as a sticky note attached to each square.</span></div>
+      </div>
+      <div class="card" style="border-color:var(--blue)">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+          <span style="font-size:22px">🎮</span>
+          <div>
+            <div style="font-family:var(--font-mono);font-size:14px;color:var(--blue);font-weight:600">class MinesweeperGame</div>
+            <div style="font-size:11px;color:var(--text3)">Brain of the game · 1 instance</div>
+          </div>
+        </div>
+        <p style="font-size:13px;color:var(--text2);line-height:1.65;margin-bottom:12px">This class does everything: draws the window, handles clicks, places mines, runs the timer, and decides if you've won or lost. Only one instance is ever created — <code style="font-size:11px;color:var(--accent2)">game = MinesweeperGame()</code>.</p>
+        <div class="tl-code">class MinesweeperGame:
+    board      = []     # 10×10 grid of Cell objects
+    game_over  = False  # are clicks disabled?
+    first_click= True   # has first click happened?
+    start_time = None   # when did the game start?
+    leaderboard= []     # top 10 times
+    # ... + 19 methods</div>
+        <div class="callout callout-tip" style="margin-top:12px"><span class="callout-icon">✅</span><span>All logic lives here. When you click a button, MinesweeperGame decides what to do with it.</span></div>
+      </div>
+    </div>
+
+    <div class="callout callout-info" style="margin-top:20px"><span class="callout-icon">🔗</span><span><strong>How they connect:</strong> MinesweeperGame creates 100 Cell objects and stores them in <code style="font-size:11px">self.board[row][col]</code>. To check if square (3,4) is a mine: <code style="font-size:11px">self.board[3][4].is_mine</code>. That's it — read the Cell's variable.</span></div>
+  </div>
+
+  <!-- VARS TAB -->
+  <div id="tab-vars" class="tab-panel">
+    <h3 style="font-size:14px;font-weight:600;margin-bottom:4px;color:var(--text)">Cell variables</h3>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:12px">Every Cell instance has these 5 variables. Each of the 100 cells has its own copy.</p>
+    <table class="var-table">
+      <tr><th>Variable</th><th>Type</th><th>What it stores</th><th>Changes when</th></tr>
+      <tr><td><span class="var-name">is_mine</span></td><td><span class="var-type type-bool">bool</span></td><td>True if a mine is hidden in this square</td><td>place_mines() runs after first click</td></tr>
+      <tr><td><span class="var-name">is_revealed</span></td><td><span class="var-type type-bool">bool</span></td><td>True once the player opens this square</td><td>reveal_cell() or flood_fill() runs</td></tr>
+      <tr><td><span class="var-name">is_flagged</span></td><td><span class="var-type type-bool">bool</span></td><td>True when player right-clicks to flag it</td><td>toggle_flag() runs</td></tr>
+      <tr><td><span class="var-name">neighbour_count</span></td><td><span class="var-type type-int">int</span></td><td>0–8: how many of the 8 surrounding squares are mines</td><td>calculate_neighbour_numbers() after mines placed</td></tr>
+      <tr><td><span class="var-name">canvas</span></td><td><span class="var-type type-str">Widget</span></td><td>The actual drawn button on screen</td><td>_build_board() on startup</td></tr>
+    </table>
+
+    <h3 style="font-size:14px;font-weight:600;margin:24px 0 4px;color:var(--text)">MinesweeperGame variables (state)</h3>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:12px">These track the game's "memory" — what's currently happening.</p>
+    <table class="var-table">
+      <tr><th>Variable</th><th>Type</th><th>Starts as</th><th>Meaning</th></tr>
+      <tr><td><span class="var-name">self.board</span></td><td><span class="var-type type-list">list[list]</span></td><td><code>[]</code></td><td>2D grid: board[row][col] gives you a Cell object</td></tr>
+      <tr><td><span class="var-name">self.first_click</span></td><td><span class="var-type type-bool">bool</span></td><td><code>True</code></td><td>True until first click — delays mine placement for safe start</td></tr>
+      <tr><td><span class="var-name">self.game_over</span></td><td><span class="var-type type-bool">bool</span></td><td><code>False</code></td><td>Becomes True when you win or lose — disables all clicks</td></tr>
+      <tr><td><span class="var-name">self.game_won</span></td><td><span class="var-type type-bool">bool</span></td><td><code>False</code></td><td>True only on win — distinguishes win vs loss</td></tr>
+      <tr><td><span class="var-name">self.start_time</span></td><td><span class="var-type type-float">float</span></td><td><code>None</code></td><td>Unix timestamp of first click. time.time() − start_time = elapsed seconds</td></tr>
+      <tr><td><span class="var-name">self.leaderboard</span></td><td><span class="var-type type-list">list</span></td><td><code>[]</code></td><td>List of (name, time) tuples, sorted by fastest, max 10</td></tr>
+      <tr><td><span class="var-name">self.timer_var</span></td><td><span class="var-type type-str">StringVar</span></td><td><code>"0s"</code></td><td>Special tkinter variable — changing it auto-updates the timer label on screen</td></tr>
+      <tr><td><span class="var-name">self.mine_var</span></td><td><span class="var-type type-str">StringVar</span></td><td><code>"10"</code></td><td>Remaining mines counter displayed on screen</td></tr>
+    </table>
+  </div>
+
+  <!-- FUNCTIONS TAB -->
+  <div id="tab-funcs" class="tab-panel">
+    <div class="timeline">
+
+      <div class="tl-item">
+        <div class="tl-dot" style="border-color:var(--green)"></div>
+        <div class="tl-title">__init__() <span style="font-size:11px;font-weight:400;color:var(--text3)">— runs once on startup</span></div>
+        <div class="tl-body">The constructor. Runs automatically when you do <code style="font-size:11px;color:var(--accent2)">game = MinesweeperGame()</code>. Creates the window, sets all variables to their starting values, then calls every setup function.</div>
+        <div class="tl-code">self.first_click = True   # no mines placed yet
+self.game_over   = False  # clicks are enabled
+self.board       = []     # empty — filled by _build_board()
+self._build_interface()   # draw the window
+self._build_board()       # create 100 Cell objects
+self.connect_buttons()    # link clicks to functions
+self.update_timer()       # start ticking</div>
+      </div>
+
+      <div class="tl-item">
+        <div class="tl-dot" style="border-color:var(--blue)"></div>
+        <div class="tl-title">_build_board() <span style="font-size:11px;font-weight:400;color:var(--text3)">— creates the grid</span></div>
+        <div class="tl-body">Uses two nested for loops (row 0→9, col 0→9) to create 100 Cell objects. Each Cell gets a Canvas widget (the visual square) and is stored in the 2D list <code style="font-size:11px;color:var(--accent2)">self.board</code>.</div>
+        <div class="tl-code">for row in range(10):        # 0,1,2...9
+    for col in range(10):    # 0,1,2...9
+        cell = Cell()            # make a new cell
+        cell.canvas = Canvas(...)# attach a visual square
+        self.board[row][col] = cell</div>
+      </div>
+
+      <div class="tl-item">
+        <div class="tl-dot" style="border-color:var(--orange)"></div>
+        <div class="tl-title">place_mines(first_row, first_col) <span style="font-size:11px;font-weight:400;color:var(--text3)">— called on first click</span></div>
+        <div class="tl-body">Randomly places 10 mines, but never in the "safe zone" (first-clicked cell + its 8 neighbours). Uses a while loop that keeps picking random positions until 10 valid ones are found. <strong>Boolean rule:</strong> place mine only if NOT safe AND NOT already a mine.</div>
+        <div class="tl-code">safe = {(first_row, first_col)}   # first click is safe
+safe += get_neighbours(first_row, first_col)  # so are neighbours
+while placed &lt; 10:
+    r, c = random.randint(0,9), random.randint(0,9)
+    if (r,c) not in safe and NOT board[r][c].is_mine:
+        board[r][c].is_mine = True
+        placed += 1</div>
+      </div>
+
+      <div class="tl-item">
+        <div class="tl-dot" style="border-color:var(--accent)"></div>
+        <div class="tl-title">get_neighbours(row, col) <span style="font-size:11px;font-weight:400;color:var(--text3)">— finds surrounding squares</span></div>
+        <div class="tl-body">Returns up to 8 (row, col) pairs for the squares surrounding a given square. Edge/corner squares return fewer because some positions fall outside the board. Used by many other functions.</div>
+        <div class="tl-code">for dr in [-1, 0, 1]:   # row offset: above, same, below
+    for dc in [-1, 0, 1]: # col offset: left, same, right
+        if dr==0 and dc==0: continue  # skip the square itself
+        if 0 &lt;= row+dr &lt; 10 and 0 &lt;= col+dc &lt; 10:
+            neighbours.append((row+dr, col+dc))</div>
+      </div>
+
+      <div class="tl-item">
+        <div class="tl-dot" style="border-color:var(--red)"></div>
+        <div class="tl-title">reveal_cell(row, col) <span style="font-size:11px;font-weight:400;color:var(--text3)">— the most important function</span></div>
+        <div class="tl-body">Called every time you left-click. Applies boolean checks, handles first click, mine hits, flood fill, and win check. This is the heart of the game.</div>
+        <div class="tl-code">if cell.is_revealed OR cell.is_flagged: return  # Boolean guard
+if first_click:
+    place_mines(row, col)   # safe zone around this click
+    start_time = time.time()
+cell.is_revealed = True
+if cell.is_mine:    # hit a mine!
+    game_over = True; reveal_all_mines()
+elif cell.neighbour_count == 0:
+    flood_fill(row, col)    # auto-open neighbours
+check_win()</div>
+      </div>
+
+      <div class="tl-item">
+        <div class="tl-dot" style="border-color:var(--accent2)"></div>
+        <div class="tl-title">flood_fill(start_row, start_col) <span style="font-size:11px;font-weight:400;color:var(--text3)">— BFS algorithm</span></div>
+        <div class="tl-body">When you open an empty square (neighbour_count=0), this function auto-opens all connected empty squares using a queue. It keeps adding unvisited empty neighbours to the queue until the whole empty region is revealed.</div>
+        <div class="tl-code">queue = deque([(start_row, start_col)])
+while queue:
+    row, col = queue.popleft()   # take next square
+    for nr, nc in get_neighbours(row, col):
+        # Boolean: only expand if NOT revealed AND NOT flagged AND NOT mine
+        if not revealed and not flagged and not mine:
+            cell.is_revealed = True
+            if cell.neighbour_count == 0:
+                queue.append((nr, nc))  # keep going!</div>
+      </div>
+
+      <div class="tl-item">
+        <div class="tl-dot" style="border-color:var(--yellow)"></div>
+        <div class="tl-title">check_win() <span style="font-size:11px;font-weight:400;color:var(--text3)">— called after every reveal</span></div>
+        <div class="tl-body">Counts all cells where is_mine=False AND is_revealed=True. If that count equals total safe squares (90), every safe cell is open — you win!</div>
+        <div class="tl-code">total_safe    = 100 - 10  # = 90 safe squares
+revealed_safe = count where NOT is_mine AND is_revealed
+if revealed_safe == total_safe:
+    game_over = True; game_won = True</div>
+      </div>
+
+      <div class="tl-item">
+        <div class="tl-dot" style="border-color:var(--orange)"></div>
+        <div class="tl-title">toggle_flag(row, col) <span style="font-size:11px;font-weight:400;color:var(--text3)">— right-click handler</span></div>
+        <div class="tl-body">Flips is_flagged between True/False. Boolean rule: only works if NOT revealed. Updates the mine counter label on screen.</div>
+        <div class="tl-code">if cell.is_revealed: return  # can't flag an open square
+cell.is_flagged = NOT cell.is_flagged  # flip True↔False
+mine_counter = TOTAL_MINES - count_of_flags</div>
+      </div>
+
+      <div class="tl-item">
+        <div class="tl-dot" style="border-color:var(--blue)"></div>
+        <div class="tl-title">update_timer() <span style="font-size:11px;font-weight:400;color:var(--text3)">— self-scheduling, never freezes</span></div>
+        <div class="tl-body">Instead of a while loop (which would freeze the window), this function schedules itself to run again after 1000ms using window.after(). Boolean: only ticks if NOT game_over AND start_time is not None.</div>
+        <div class="tl-code">if NOT game_over AND start_time is not None:
+    elapsed = time.time() - start_time
+    timer_var.set(f"{elapsed}s")
+if NOT game_over:
+    window.after(1000, update_timer)  # schedule next tick</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- FLOW TAB -->
+  <div id="tab-flow" class="tab-panel">
+    <p style="font-size:13px;color:var(--text2);margin-bottom:24px">Trace exactly what happens from the moment you click a square to when the screen updates.</p>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:28px;align-items:start">
+
+      <!-- COL 1: Left + Right click flows -->
+      <div>
+        <div style="font-size:13px;font-weight:600;margin-bottom:14px;color:var(--text)">▶ Left-click flow</div>
+        <div class="flow-wrap">
+        <div class="flow">
+          <div class="flow-node start">You left-click a square</div>
+          <div class="flow-arrow"><div class="flow-arrow-line"></div><div class="flow-arrow-head">▼</div></div>
+          <div class="flow-node action">left_click(row, col)</div>
+          <div class="flow-arrow"><div class="flow-arrow-line"></div></div>
+          <div class="flow-node" style="background:rgba(255,85,102,.08);border-color:var(--red);font-size:12px;padding:10px 16px">Boolean: <strong>NOT game_over?</strong></div>
+          <div class="flow-arrow"><div class="flow-arrow-line"></div><span style="font-size:11px;color:var(--green);margin-left:4px">Yes →</span></div>
+          <div class="flow-node action">reveal_cell(row, col)</div>
+          <div class="flow-arrow"><div class="flow-arrow-line"></div></div>
+          <div class="flow-node" style="background:rgba(255,85,102,.08);border-color:var(--red);font-size:12px;padding:10px 16px">Boolean: already revealed<br>OR flagged?</div>
+          <div class="flow-arrow"><div class="flow-arrow-line"></div><span style="font-size:11px;color:var(--green)">No → continue</span></div>
+          <div class="flow-node" style="background:rgba(77,166,255,.06);border-color:var(--blue);font-size:12px;padding:10px 16px">Is this first_click?</div>
+          <div class="flow-arrow"><div class="flow-arrow-line"></div><span style="font-size:11px;color:var(--green)">Yes → place_mines() + start timer</span></div>
+          <div class="flow-node" style="background:rgba(255,85,102,.08);border-color:var(--red);font-size:12px;padding:10px 16px">Is it a mine?</div>
+          <div style="display:flex;gap:20px;width:100%;margin-top:4px">
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center">
+              <div style="font-size:11px;color:var(--red);margin-bottom:4px">Yes 💣</div>
+              <div class="flow-node end-lose" style="font-size:12px;padding:8px 12px">game_over = True<br>reveal_all_mines()</div>
+            </div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center">
+              <div style="font-size:11px;color:var(--green);margin-bottom:4px">No ✓</div>
+              <div class="flow-node" style="font-size:12px;padding:8px 12px;border-color:var(--green)">neighbour_count = 0?</div>
+              <div class="flow-arrow"><div class="flow-arrow-line"></div></div>
+              <div style="display:flex;gap:8px">
+                <div class="flow-node" style="font-size:11px;padding:6px 10px;border-color:var(--accent2)">Yes→ flood_fill()</div>
+                <div class="flow-node" style="font-size:11px;padding:6px 10px;border-color:var(--yellow)">No→ show number</div>
+              </div>
+              <div class="flow-arrow"><div class="flow-arrow-line"></div></div>
+              <div class="flow-node" style="font-size:12px;padding:8px 12px">check_win()</div>
+            </div>
+          </div>
+        </div>
+        </div>
+
+        <div style="margin-top:32px;font-size:13px;font-weight:600;margin-bottom:14px;color:var(--text)">🖊 Right-click flow</div>
+        <div class="flow">
+          <div class="flow-node start">You right-click a square</div>
+          <div class="flow-arrow"><div class="flow-arrow-line"></div><div class="flow-arrow-head">▼</div></div>
+          <div class="flow-node action">right_click(event, row, col)</div>
+          <div class="flow-arrow"><div class="flow-arrow-line"></div></div>
+          <div class="flow-node" style="background:rgba(255,85,102,.08);border-color:var(--red);font-size:12px;padding:10px 16px">Boolean: NOT game_over?</div>
+          <div class="flow-arrow"><div class="flow-arrow-line"></div><span style="font-size:11px;color:var(--green)">Yes →</span></div>
+          <div class="flow-node action">toggle_flag(row, col)</div>
+          <div class="flow-arrow"><div class="flow-arrow-line"></div></div>
+          <div class="flow-node" style="background:rgba(255,85,102,.08);border-color:var(--red);font-size:12px;padding:10px 16px">Boolean: is_revealed?</div>
+          <div class="flow-arrow"><div class="flow-arrow-line"></div><span style="font-size:11px;color:var(--green)">No → allowed</span></div>
+          <div class="flow-node" style="font-size:12px;padding:10px 16px">is_flagged = NOT is_flagged</div>
+          <div class="flow-arrow"><div class="flow-arrow-line"></div></div>
+          <div class="flow-node end-win" style="font-size:12px;padding:8px 12px">Update mine counter on screen</div>
+        </div>
+      </div>
+
+      <!-- COL 2: Timer flow + key facts -->
+      <div>
+        <div style="font-size:13px;font-weight:600;margin-bottom:14px;color:var(--text)">⏱ Timer flow (background)</div>
+        <div class="flow">
+          <div class="flow-node start" style="font-size:12px">update_timer() scheduled</div>
+          <div class="flow-arrow"><div class="flow-arrow-line"></div><span style="font-size:11px;color:var(--text3)">waits 1000ms</span></div>
+          <div class="flow-node" style="font-size:12px;padding:10px 16px;border-color:var(--blue)">NOT game_over AND<br>start_time exists?</div>
+          <div class="flow-arrow"><div class="flow-arrow-line"></div><span style="font-size:11px;color:var(--green)">Yes →</span></div>
+          <div class="flow-node" style="font-size:12px;padding:10px 16px">elapsed = now − start_time<br>update label on screen</div>
+          <div class="flow-arrow"><div class="flow-arrow-line"></div></div>
+          <div class="flow-node" style="font-size:12px;padding:10px 16px;border-color:var(--blue)">NOT game_over?</div>
+          <div class="flow-arrow"><div class="flow-arrow-line"></div><span style="font-size:11px;color:var(--green)">Yes →</span></div>
+          <div class="flow-node start" style="font-size:12px">Schedule self again after 1s</div>
+        </div>
+
+        <div style="margin-top:32px">
+          <div style="font-size:13px;font-weight:600;margin-bottom:10px;color:var(--text)">📌 Key facts</div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--text2);line-height:1.6"><span style="color:var(--accent2);font-weight:600">100 Cell objects</span> created at startup — one per square</div>
+            <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--text2);line-height:1.6"><span style="color:var(--green);font-weight:600">Mines placed AFTER</span> first click to guarantee a safe opening</div>
+            <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--text2);line-height:1.6"><span style="color:var(--blue);font-weight:600">window.after(1000)</span> schedules the timer without freezing the UI</div>
+            <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--text2);line-height:1.6"><span style="color:var(--orange);font-weight:600">BFS deque</span> auto-reveals entire empty regions in one click</div>
+            <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--text2);line-height:1.6"><span style="color:var(--yellow);font-weight:600">Win = 90 safe cells</span> revealed (100 total − 10 mines)</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- SOURCE CODE TAB — inline sliding panel -->
+  <div id="tab-source-inline" class="tab-panel tab-source-panel">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+      <div>
+        <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:2px">minesweeper.py — full source</div>
+        <div style="font-size:12px;color:var(--text3)">Click any line to ask the AI · Hover for section name</div>
+      </div>
+      <div style="display:flex;gap:5px;flex-wrap:wrap" id="inline-jump-row">
+        <button class="src-jump-btn" onclick="jumpToLine('src-imports')">Imports</button>
+        <button class="src-jump-btn" onclick="jumpToLine('src-constants')">Constants</button>
+        <button class="src-jump-btn" onclick="jumpToLine('src-cell')">Cell class</button>
+        <button class="src-jump-btn" onclick="jumpToLine('src-game')">Game class</button>
+        <button class="src-jump-btn" onclick="jumpToLine('src-reveal')">reveal_cell</button>
+        <button class="src-jump-btn" onclick="jumpToLine('src-bfs')">flood_fill</button>
+        <button class="src-jump-btn" onclick="jumpToLine('src-win')">check_win</button>
+        <button class="src-jump-btn" onclick="jumpToLine('src-entry')">Entry point</button>
+      </div>
+    </div>
+    <div id="src-code-box-inline" style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;position:relative">
+      <div style="background:var(--surface2);border-bottom:1px solid var(--border);padding:10px 16px;display:flex;align-items:center;gap:8px">
+        <div style="display:flex;gap:4px">
+          <div style="width:10px;height:10px;border-radius:50%;background:#FF5F57"></div>
+          <div style="width:10px;height:10px;border-radius:50%;background:#FEBC2E"></div>
+          <div style="width:10px;height:10px;border-radius:50%;background:#28C840"></div>
+        </div>
+        <span style="font-size:12px;color:var(--text2);font-family:var(--font-mono);margin-left:4px">minesweeper.py</span>
+        <span style="margin-left:auto;font-size:11px;color:var(--text3)">click any line · ask AI instantly</span>
+      </div>
+      <div id="src-lines-inline" style="overflow-y:auto;max-height:72vh;padding:6px 0;font-family:var(--font-mono);font-size:12px;line-height:1.8"></div>
+      <!-- Multi-match popup inside code box -->
+      <div id="src-multi-popup-inline" style="display:none;position:sticky;bottom:0;left:0;right:0;background:rgba(26,26,56,.97);border-top:1px solid #7B6FFF;padding:8px 14px;align-items:center;gap:10px;z-index:10;flex-wrap:wrap">
+        <span style="font-size:11px;color:#9090C0" id="src-multi-label-inline">0 matches</span>
+        <div style="display:flex;gap:5px;margin-left:auto;align-items:center">
+          <button class="src-multi-btn" onclick="srcMultiPrev()">← Prev</button>
+          <span id="src-multi-pos-inline" style="font-size:11px;color:#A084FF;font-family:var(--font-mono);padding:2px 6px">1/1</span>
+          <button class="src-multi-btn" onclick="srcMultiNext()">Next →</button>
+          <button class="src-multi-btn danger" onclick="closeSrcMultiPopup()">✕ Clear</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ── BOOLEAN ALGEBRA ── -->
+<section id="boolean" class="section">
+  <div class="section-label">The math behind every decision</div>
+  <h2 class="section-title">Boolean algebra — the game's rulebook</h2>
+  <p class="section-sub">Every decision in this game is a boolean expression. Boolean algebra has only two values — True and False — and three main operations.</p>
+
+  <div class="bool-grid" style="margin-top:32px">
+    <div class="bool-card not">
+      <div class="bool-op">NOT</div>
+      <div class="bool-title">NOT — flips the value</div>
+      <div class="bool-desc">NOT True = False. NOT False = True. Used to check "is this thing <em>not</em> the case?" In Python: <code style="font-size:11px">not x</code></div>
+      <table class="truth-table">
+        <tr><th>Input</th><th>NOT Input</th></tr>
+        <tr><td class="T">True</td><td class="F">False</td></tr>
+        <tr><td class="F">False</td><td class="T">True</td></tr>
+      </table>
+      <div style="font-family:var(--font-mono);font-size:11px;color:var(--accent2);margin-top:10px;line-height:1.8">Game use:<br>if not cell.is_revealed: ...</div>
+    </div>
+    <div class="bool-card and">
+      <div class="bool-op">AND</div>
+      <div class="bool-title">AND — both must be true</div>
+      <div class="bool-desc">Only True if both sides are True. Used to combine multiple conditions. In Python: <code style="font-size:11px">x and y</code></div>
+      <table class="truth-table">
+        <tr><th>A</th><th>B</th><th>A AND B</th></tr>
+        <tr><td class="T">T</td><td class="T">T</td><td class="T">True</td></tr>
+        <tr><td class="T">T</td><td class="F">F</td><td class="F">False</td></tr>
+        <tr><td class="F">F</td><td class="T">T</td><td class="F">False</td></tr>
+        <tr><td class="F">F</td><td class="F">F</td><td class="F">False</td></tr>
+      </table>
+      <div style="font-family:var(--font-mono);font-size:11px;color:var(--accent2);margin-top:10px;line-height:1.8">Game use:<br>if not revealed and not flagged: ...</div>
+    </div>
+    <div class="bool-card or">
+      <div class="bool-op">OR</div>
+      <div class="bool-title">OR — at least one true</div>
+      <div class="bool-desc">True if either side is True. In Python: <code style="font-size:11px">x or y</code>. Used to combine alternative blocking conditions.</div>
+      <table class="truth-table">
+        <tr><th>A</th><th>B</th><th>A OR B</th></tr>
+        <tr><td class="T">T</td><td class="T">T</td><td class="T">True</td></tr>
+        <tr><td class="T">T</td><td class="F">F</td><td class="T">True</td></tr>
+        <tr><td class="F">F</td><td class="T">T</td><td class="T">True</td></tr>
+        <tr><td class="F">F</td><td class="F">F</td><td class="F">False</td></tr>
+      </table>
+      <div style="font-family:var(--font-mono);font-size:11px;color:var(--accent2);margin-top:10px;line-height:1.8">Game use:<br>if revealed or flagged: return</div>
+    </div>
+    <div class="bool-card xor">
+      <div class="bool-op">NOT (toggle)</div>
+      <div class="bool-title">Toggle — flip a boolean</div>
+      <div class="bool-desc">Setting a variable to NOT itself flips it between True and False. This is how flagging works — one right-click places the flag, next right-click removes it.</div>
+      <table class="truth-table">
+        <tr><th>Before</th><th>After toggle</th><th>Effect</th></tr>
+        <tr><td class="F">False</td><td class="T">True</td><td>🚩 Flag placed</td></tr>
+        <tr><td class="T">True</td><td class="F">False</td><td>Flag removed</td></tr>
+      </table>
+      <div style="font-family:var(--font-mono);font-size:11px;color:var(--accent2);margin-top:10px;line-height:1.8">Game use:<br>is_flagged = not is_flagged</div>
+    </div>
+  </div>
+
+  <!-- All 7 boolean rules -->
+  <h3 style="font-size:16px;font-weight:600;margin:36px 0 16px;color:var(--text)">All 7 boolean rules used in this game</h3>
+
+  <div class="bool-rule"><div class="bool-icon">🖱️</div><div><div class="bool-rule-code">accept_click = <span style="color:var(--red)">NOT</span> game_over</div><div class="bool-rule-desc">Before doing anything with a click, check game hasn't ended. If game_over is True, ignore all clicks.</div></div></div>
+  <div class="bool-rule"><div class="bool-icon">👁️</div><div><div class="bool-rule-code">can_reveal = <span style="color:var(--red)">NOT</span> is_revealed <span style="color:var(--blue)">AND</span> <span style="color:var(--red)">NOT</span> is_flagged</div><div class="bool-rule-desc">A cell can only be revealed if it hasn't already been opened AND it hasn't been flagged. Both conditions must be false.</div></div></div>
+  <div class="bool-rule"><div class="bool-icon">🚩</div><div><div class="bool-rule-code">can_flag = <span style="color:var(--red)">NOT</span> is_revealed</div><div class="bool-rule-desc">You can only place or remove a flag if the cell hasn't been revealed yet. Open cells can't be flagged.</div></div></div>
+  <div class="bool-rule"><div class="bool-icon">💣</div><div><div class="bool-rule-code">can_place_mine = <span style="color:var(--red)">NOT</span> in_safe_zone <span style="color:var(--blue)">AND</span> <span style="color:var(--red)">NOT</span> already_mine</div><div class="bool-rule-desc">When placing 10 mines: skip if the position is in the first-click's safe zone, AND skip if a mine is already there.</div></div></div>
+  <div class="bool-rule"><div class="bool-icon">🔢</div><div><div class="bool-rule-code">count_for_win = <span style="color:var(--red)">NOT</span> is_mine <span style="color:var(--blue)">AND</span> is_revealed</div><div class="bool-rule-desc">A cell counts toward the win condition only if it's safe (not a mine) AND it's been opened. Used to check all 90 safe cells.</div></div></div>
+  <div class="bool-rule"><div class="bool-icon">🌊</div><div><div class="bool-rule-code">expand_bfs = <span style="color:var(--red)">NOT</span> is_revealed <span style="color:var(--blue)">AND</span> <span style="color:var(--red)">NOT</span> is_flagged <span style="color:var(--blue)">AND</span> <span style="color:var(--red)">NOT</span> is_mine</div><div class="bool-rule-desc">In flood fill: add a neighbour to the queue only if it hasn't been revealed, isn't flagged, and isn't a mine. Three conditions, all with NOT.</div></div></div>
+  <div class="bool-rule"><div class="bool-icon">⏱️</div><div><div class="bool-rule-code">tick_timer = <span style="color:var(--red)">NOT</span> game_over <span style="color:var(--blue)">AND</span> start_time <span style="color:var(--red)">is not</span> None</div><div class="bool-rule-desc">The timer only counts while the game is active AND after the first click (start_time is only set on first click).</div></div></div>
+
+  <!-- Interactive boolean checker -->
+  <div class="bool-demo">
+    <h3>🧪 Try it: reveal_cell() boolean check</h3>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:16px">Toggle the cell states below and watch the boolean expression evaluate in real time.</p>
+    <div class="toggle-row">
+      <span class="toggle-label">is_revealed</span>
+      <label class="toggle-switch"><input type="checkbox" id="chk-revealed" onchange="evalBool()"><span class="toggle-slider"></span></label>
+      <span id="lbl-revealed" style="font-size:12px;font-family:var(--font-mono);color:var(--red)">False</span>
+    </div>
+    <div class="toggle-row">
+      <span class="toggle-label">is_flagged</span>
+      <label class="toggle-switch"><input type="checkbox" id="chk-flagged" onchange="evalBool()"><span class="toggle-slider"></span></label>
+      <span id="lbl-flagged" style="font-size:12px;font-family:var(--font-mono);color:var(--red)">False</span>
+    </div>
+    <div class="toggle-row">
+      <span class="toggle-label">game_over</span>
+      <label class="toggle-switch"><input type="checkbox" id="chk-gameover" onchange="evalBool()"><span class="toggle-slider"></span></label>
+      <span id="lbl-gameover" style="font-size:12px;font-family:var(--font-mono);color:var(--red)">False</span>
+    </div>
+    <div class="bool-result" id="bool-result">
+      <div class="result-label">Can the cell be revealed?</div>
+      <div class="result-value result-true" id="bool-answer">✅  YES — cell can be revealed</div>
+      <div class="bool-expr" id="bool-expr">NOT False AND NOT False AND NOT False → <span>True</span></div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ── FLOOD FILL ── -->
+<section id="bfs" class="section">
+  <div class="section-label">The auto-reveal algorithm</div>
+  <h2 class="section-title">Flood fill — how empty areas auto-open</h2>
+  <p class="section-sub">When you click a blank square (zero nearby mines), the game auto-reveals an entire connected region. This uses a computer science algorithm called Breadth First Search (BFS). Step through it to see how it works.</p>
+
+  <div class="callout callout-info" style="margin-top:24px"><span class="callout-icon">💡</span><span><strong>BFS in plain English:</strong> Start with one square. Check all its neighbours. If a neighbour is safe and empty, add it to a queue. Process the queue one by one, checking each square's neighbours. Keep going until the queue is empty.</span></div>
+
+  <div style="margin-top:24px">
+    <div class="bfs-controls">
+      <button class="bfs-btn primary-btn" onclick="bfsReset()">↺ Reset</button>
+      <button class="bfs-btn" onclick="bfsStep()">Step →</button>
+      <button class="bfs-btn" onclick="bfsAuto()">▶ Auto-play</button>
+    </div>
+    <div class="bfs-step-info" id="bfs-info">Click "Step" to begin. The highlighted cell (green) was just clicked — it has 0 nearby mines.</div>
+    <div class="bfs-grid" id="bfs-grid"></div>
+    <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:10px;font-size:12px;color:var(--text2)">
+      <span><span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:rgba(68,221,136,.2);border:1px solid var(--green);vertical-align:middle;margin-right:4px"></span>Origin (clicked)</span>
+      <span><span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:rgba(123,111,255,.25);border:1px solid var(--accent);vertical-align:middle;margin-right:4px"></span>In queue (to be processed)</span>
+      <span><span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:var(--cell-r);border:1px solid var(--border);vertical-align:middle;margin-right:4px"></span>Visited (revealed)</span>
+      <span><span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:var(--cell);border:1px solid var(--border2);vertical-align:middle;margin-right:4px"></span>Wall (has a mine / number)</span>
+    </div>
+  </div>
+
+  <div class="code-section" style="margin-top:28px">
+    <div class="code-header"><div class="code-dots"><div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div></div><span class="code-filename">flood_fill() — the BFS code</span></div>
+    <pre><span class="kw">def</span> <span class="fn">flood_fill</span>(self, start_row, start_col):
+    <span class="cm">"""BFS: auto-reveals connected empty region."""</span>
+    queue = deque([(start_row, start_col)])   <span class="cm"># start with clicked cell</span>
+
+    <span class="kw">while</span> queue:                              <span class="cm"># keep going until queue empty</span>
+        row, col = queue.popleft()            <span class="cm"># take next cell from front</span>
+        <span class="kw">for</span> nr, nc <span class="kw">in</span> self.<span class="fn">get_neighbours</span>(row, col):
+            cell = self.board[nr][nc]
+            <span class="cm"># Boolean: only if NOT revealed AND NOT flagged AND NOT mine</span>
+            <span class="kw">if not</span> cell.is_revealed <span class="kw">and not</span> cell.is_flagged <span class="kw">and not</span> cell.is_mine:
+                cell.is_revealed = <span class="kw">True</span>
+                self.<span class="fn">_draw_cell</span>(nr, nc)
+                <span class="kw">if</span> cell.neighbour_count == <span class="num">0</span>:
+                    queue.append((nr, nc))    <span class="cm"># empty: keep expanding</span>
+                <span class="cm"># else: number cell — reveal it but don't expand further</span></pre>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ── GLOSSARY ── -->
+<section class="section">
+  <div class="section-label">Key terms</div>
+  <h2 class="section-title">Glossary</h2>
+  <p class="section-sub">Quick definitions for every programming concept used in this game.</p>
+  <div class="glossary-grid">
+    <div class="glossary-card"><div class="glossary-term">class</div><div class="glossary-def">A template/blueprint for creating objects. Like a cookie cutter — the class is the cutter, each object made from it is a cookie.</div></div>
+    <div class="glossary-card"><div class="glossary-term">instance</div><div class="glossary-def">One specific object made from a class. There are 100 Cell instances (one per square) and 1 MinesweeperGame instance.</div></div>
+    <div class="glossary-card"><div class="glossary-term">__init__()</div><div class="glossary-def">The constructor — runs automatically when you create an instance. Sets up all the starting values. Called once per object.</div></div>
+    <div class="glossary-card"><div class="glossary-term">self</div><div class="glossary-def">Inside a class method, "self" refers to the current instance. self.is_mine means "this cell's is_mine variable."</div></div>
+    <div class="glossary-card"><div class="glossary-term">boolean</div><div class="glossary-def">A value that is either True or False. Named after mathematician George Boole. All the cell states (is_mine, is_revealed, is_flagged) are booleans.</div></div>
+    <div class="glossary-card"><div class="glossary-term">deque</div><div class="glossary-def">A "double-ended queue" from Python's collections module. Used in BFS because adding/removing from both ends is O(1) — faster than a regular list.</div></div>
+    <div class="glossary-card"><div class="glossary-term">BFS</div><div class="glossary-def">Breadth First Search — explores all neighbours level by level. Used in flood fill to auto-reveal connected empty squares in the right order.</div></div>
+    <div class="glossary-card"><div class="glossary-term">StringVar</div><div class="glossary-def">A special tkinter variable. When you change its value, any label or widget connected to it updates automatically on screen. Used for the timer and mine counter.</div></div>
+    <div class="glossary-card"><div class="glossary-term">lambda</div><div class="glossary-def">A tiny anonymous function written inline. Used in connect_buttons() so each cell's click handler remembers its own (row, col): lambda r=row, c=col: ...</div></div>
+    <div class="glossary-card"><div class="glossary-term">window.after()</div><div class="glossary-def">Tkinter's way to schedule something to run later without freezing. Used by update_timer() to tick every 1000ms without blocking the UI.</div></div>
+    <div class="glossary-card"><div class="glossary-term">O(n)</div><div class="glossary-def">Big-O notation — how an algorithm scales. O(rows×cols) means the time grows proportionally with the board size. BFS is O(rows×cols) worst case.</div></div>
+    <div class="glossary-card"><div class="glossary-term">safe zone</div><div class="glossary-def">The first-clicked cell and its 8 neighbours. Mines are never placed here, guaranteeing the very first click is always safe and opens a good area.</div></div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- ── QUIZ ── -->
+<section id="quiz" class="section">
+  <div class="section-label">Test your understanding</div>
+  <h2 class="section-title">Quick check</h2>
+  <p class="section-sub">Five questions covering everything in this guide.</p>
+
+  <div id="quiz-container" style="margin-top:28px;max-width:640px"></div>
+</section>
+
+<!-- ── FOOTER ── -->
+<footer style="background:var(--surface);border-top:1px solid var(--border);padding:2rem;text-align:center">
+  <p style="font-size:13px;color:var(--text3)">Minesweeper — Boolean Algebra CIA-1 · CHRIST University · BCA</p>
+  <p style="font-size:12px;color:var(--text3);margin-top:4px">Built with Python · tkinter · BFS · Boolean Algebra</p>
+</footer>
+
+<script>
+/* ══════════════════════════════════════════
+   HERO MINI BOARD
+══════════════════════════════════════════ */
+const heroData = [
+  ['h','h','h','h','h','h'],
+  ['r1','r2','r-','h','f','h'],
+  ['r-','r-','r1','h','h','h'],
+  ['r-','r1','r2','r-','r1','h'],
+  ['h','h','r-','r-','r-','h'],
+  ['h','h','r1','r1','r1','h'],
+];
+const heroBoard = document.getElementById('hero-board');
+if(heroBoard){
+  heroData.flat().forEach(type=>{
+    const c = document.createElement('div');
+    c.className = 'mini-cell';
+    if(type==='h'){c.className+=' mc-hidden';c.textContent=''}
+    else if(type==='f'){c.className+=' mc-flag';c.textContent='🚩'}
+    else if(type==='m'){c.className+=' mc-mine';c.textContent='💣'}
+    else if(type==='r-'){c.className+=' mc-revealed mc-n0'}
+    else if(type==='r1'){c.className+=' mc-revealed mc-n1';c.textContent='1'}
+    else if(type==='r2'){c.className+=' mc-revealed mc-n2';c.textContent='2'}
+    else if(type==='r3'){c.className+=' mc-revealed mc-n3';c.textContent='3'}
+    heroBoard.appendChild(c);
+  });
+}
+
+/* ══════════════════════════════════════════
+   TAB SWITCHER
+══════════════════════════════════════════ */
+function switchTab(btn, panelId){
+  // Deactivate all buttons in same tab-bar
+  const bar = btn.closest('.tab-bar');
+  bar.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  // Deactivate all tab-panels that are siblings of (or near) the bar
+  const section = bar.closest('section');
+  section.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById(panelId).classList.add('active');
+}
+
+/* ══════════════════════════════════════════
+   INTERACTIVE DEMO (10×10 Minesweeper)
+══════════════════════════════════════════ */
+let dBoard=[], dMines=new Set(), dFirstClick=true, dGameOver=false, dFlagCount=0;
+let dTimer=0, dTimerID=null, dMineCount=10;
+const DROWS=10,DCOLS=10,DTOTAL=10;
+const NUM_COLORS_D=['','#5599FF','#44DD88','#FF6655','#AA66FF','#FFAA44','#44DDDD','#FF77CC','#AAAAAA'];
+
+function initDemo(){
+  clearInterval(dTimerID);
+  dBoard=[];dMines=new Set();dFirstClick=true;dGameOver=false;dFlagCount=0;dTimer=0;dMineCount=10;
+  document.getElementById('d-mines').textContent=10;
+  document.getElementById('d-timer').textContent='0s';
+  document.getElementById('d-status').textContent='Click any square to start';
+  const board=document.getElementById('demo-board');
+  board.innerHTML='';
+  for(let r=0;r<DROWS;r++){
+    dBoard.push([]);
+    for(let c=0;c<DCOLS;c++){
+      dBoard[r].push({mine:false,revealed:false,flagged:false,count:0});
+      const cell=document.createElement('div');
+      cell.className='demo-cell';
+      cell.dataset.r=r;cell.dataset.c=c;
+      cell.addEventListener('click',()=>dLeftClick(r,c));
+      cell.addEventListener('contextmenu',e=>{e.preventDefault();dRightClick(r,c);});
+      cell.addEventListener('mouseenter',()=>{if(!dBoard[r][c].revealed&&!dBoard[r][c].flagged&&!dGameOver)cell.style.background='var(--cell-h)';});
+      cell.addEventListener('mouseleave',()=>{if(!dBoard[r][c].revealed&&!dBoard[r][c].flagged)cell.style.background='';});
+      board.appendChild(cell);
+    }
+  }
+  dLog('READY','Board reset. 100 Cell objects created. Waiting for first click.','');
+}
+
+function dGetCell(r,c){return document.querySelector(`[data-r="${r}"][data-c="${c}"]`);}
+
+function dPlaceMines(fr,fc){
+  const safe=new Set();
+  safe.add(`${fr},${fc}`);
+  dGetNeighbours(fr,fc).forEach(([nr,nc])=>safe.add(`${nr},${nc}`));
+  let placed=0;
+  while(placed<DTOTAL){
+    const r=Math.floor(Math.random()*DROWS),c=Math.floor(Math.random()*DCOLS);
+    const k=`${r},${c}`;
+    if(!safe.has(k)&&!dMines.has(k)){dMines.add(k);dBoard[r][c].mine=true;placed++;}
+  }
+  for(let r=0;r<DROWS;r++)for(let c=0;c<DCOLS;c++){
+    if(dBoard[r][c].mine)continue;
+    dBoard[r][c].count=dGetNeighbours(r,c).filter(([nr,nc])=>dBoard[nr][nc].mine).length;
+  }
+  dLog('MINES',`10 mines placed. Safe zone: (${fr},${fc}) + neighbours excluded.`,'log-reveal');
+}
+
+function dGetNeighbours(r,c){
+  const n=[];
+  for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){
+    if(dr===0&&dc===0)continue;
+    const nr=r+dr,nc=c+dc;
+    if(nr>=0&&nr<DROWS&&nc>=0&&nc<DCOLS)n.push([nr,nc]);
+  }
+  return n;
+}
+
+function dRevealCell(r,c){
+  const cell=dBoard[r][c],el=dGetCell(r,c);
+  if(cell.revealed||cell.flagged){
+    dLog('SKIP',`(${r},${c}) skipped — Boolean: ${cell.revealed?'already revealed':'flagged'}. NOT revealed AND NOT flagged = FALSE.`,'');
+    return;
+  }
+  if(dFirstClick){
+    dFirstClick=false;
+    dPlaceMines(r,c);
+    dTimerID=setInterval(()=>{dTimer++;document.getElementById('d-timer').textContent=dTimer+'s';},1000);
+    dLog('FIRST',`First click at (${r},${c}). Mines placed around safe zone. Timer started.`,'log-reveal');
+  }
+  cell.revealed=true;
+  el.classList.add('revealed');
+  el.style.background='';
+  if(cell.mine){
+    el.textContent='💣';el.classList.add('mine-exploded');
+    dGameOver=true;clearInterval(dTimerID);
+    document.getElementById('d-status').textContent='💥 BOOM — game over';
+    dLog('MINE',`(${r},${c}) was a MINE! game_over = True. Revealing all mines...`,'log-mine');
+    dRevealAllMines();
+    return;
+  }
+  if(cell.count===0){
+    el.textContent='';
+    dFloodFill(r,c);
+  }else{
+    el.textContent=cell.count;
+    el.style.color=NUM_COLORS_D[cell.count];
+    dLog('NUMBER',`(${r},${c}) revealed. neighbour_count = ${cell.count}. Showing number.`,'log-reveal');
+  }
+  dCheckWin();
+}
+
+function dFloodFill(sr,sc){
+  const queue=[[sr,sc]];const visited=new Set([`${sr},${sc}`]);
+  let expanded=0;
+  dLog('BFS',`Flood fill started at (${sr},${sc}). Queue = [(${sr},${sc})]`,'log-bfs');
+  while(queue.length){
+    const [r,c]=queue.shift();
+    dGetNeighbours(r,c).forEach(([nr,nc])=>{
+      const k=`${nr},${nc}`,cell=dBoard[nr][nc],el=dGetCell(nr,nc);
+      if(!cell.revealed&&!cell.flagged&&!cell.mine&&!visited.has(k)){
+        visited.add(k);cell.revealed=true;expanded++;
+        el.classList.add('revealed');el.style.background='';
+        if(cell.count===0){el.textContent='';}
+        else{el.textContent=cell.count;el.style.color=NUM_COLORS_D[cell.count];}
+        if(cell.count===0)queue.push([nr,nc]);
+      }
+    });
+  }
+  dLog('BFS',`BFS complete. ${expanded} extra cells revealed. Boolean rule: NOT revealed AND NOT flagged AND NOT mine.`,'log-bfs');
+}
+
+function dRightClick(r,c){
+  if(dGameOver)return;
+  const cell=dBoard[r][c],el=dGetCell(r,c);
+  if(cell.revealed){dLog('SKIP',`(${r},${c}) can't flag — Boolean: is_revealed = True. NOT revealed = FALSE.`,'');return;}
+  cell.flagged=!cell.flagged;
+  if(cell.flagged){
+    el.textContent='🚩';el.style.color='';dFlagCount++;
+    dLog('FLAG',`(${r},${c}) flagged. is_flagged toggled True. NOT is_flagged → True.`,'log-right');
+  }else{
+    el.textContent='';dFlagCount--;
+    dLog('FLAG',`(${r},${c}) flag removed. is_flagged toggled False.`,'log-right');
+  }
+  dMineCount=DTOTAL-dFlagCount;
+  document.getElementById('d-mines').textContent=dMineCount;
+}
+
+function dRevealAllMines(){
+  for(let r=0;r<DROWS;r++)for(let c=0;c<DCOLS;c++){
+    const cell=dBoard[r][c],el=dGetCell(r,c);
+    if(cell.mine&&!cell.revealed){el.textContent='💣';el.classList.add('mine-shown');el.style.background='#2A0D18';}
+  }
+}
+
+function dCheckWin(){
+  const totalSafe=DROWS*DCOLS-DTOTAL;
+  const revealed=dBoard.flat().filter(c=>!c.mine&&c.revealed).length;
+  if(revealed===totalSafe){
+    dGameOver=true;clearInterval(dTimerID);
+    document.getElementById('d-status').textContent='🎉 You won!';
+    dLog('WIN',`All ${totalSafe} safe cells revealed! check_win() → True. game_over = True.`,'log-win');
+  }
+}
+
+function dLeftClick(r,c){
+  if(dGameOver)return;
+  dLog('CLICK',`left_click(${r},${c}) — Boolean check: NOT game_over = True → call reveal_cell(${r},${c})`,'log-left');
+  dRevealCell(r,c);
+}
+
+let logCount=0;
+function dLog(type,msg,cls){
+  const log=document.getElementById('event-log');
+  const entry=document.createElement('div');
+  entry.className='log-entry '+(cls||'');
+  entry.innerHTML=`<span class="log-type">${type}</span>${msg}`;
+  log.appendChild(entry);
+  log.scrollTop=log.scrollHeight;
+  logCount++;
+  if(logCount>80){log.removeChild(log.firstChild);}
+}
+
+function autoPlay(){
+  if(dGameOver){
+    initDemo();
+    setTimeout(()=>dLeftClick(4,4),100);
+    return;
+  }
+  if(dFirstClick){dLeftClick(4,4);return;}
+  // find a safe unrevealed unflagged cell and click it
+  for(let r=0;r<DROWS;r++)for(let c=0;c<DCOLS;c++){
+    const cell=dBoard[r][c];
+    if(!cell.revealed&&!cell.flagged&&!cell.mine){dLeftClick(r,c);return;}
+  }
+}
+
+initDemo();
+
+/* ══════════════════════════════════════════
+   BOOLEAN INTERACTIVE CHECKER
+══════════════════════════════════════════ */
+function evalBool(){
+  const rev=document.getElementById('chk-revealed').checked;
+  const flag=document.getElementById('chk-flagged').checked;
+  const go=document.getElementById('chk-gameover').checked;
+  document.getElementById('lbl-revealed').textContent=rev?'True':'False';
+  document.getElementById('lbl-revealed').style.color=rev?'var(--green)':'var(--red)';
+  document.getElementById('lbl-flagged').textContent=flag?'True':'False';
+  document.getElementById('lbl-flagged').style.color=flag?'var(--green)':'var(--red)';
+  document.getElementById('lbl-gameover').textContent=go?'True':'False';
+  document.getElementById('lbl-gameover').style.color=go?'var(--green)':'var(--red)';
+
+  const canReveal=!rev&&!flag&&!go;
+  const ans=document.getElementById('bool-answer');
+  const expr=document.getElementById('bool-expr');
+  ans.textContent=canReveal?'✅  YES — cell can be revealed':'❌  NO — blocked by boolean rule';
+  ans.className='result-value '+(canReveal?'result-true':'result-false');
+  const nr=`NOT ${rev}`,nf=`NOT ${flag}`,ngo=`NOT ${go}`;
+  expr.innerHTML=`${nr} AND ${nf} AND ${ngo} → <span style="color:${canReveal?'var(--green)':'var(--red)'};font-weight:600">${canReveal}</span>`;
+  let reason='';
+  if(go)reason='game_over is True — all clicks disabled.';
+  else if(rev)reason='Cell already revealed — can\'t open it again.';
+  else if(flag)reason='Cell is flagged — remove the flag first.';
+  else reason='All three conditions pass — proceed to reveal!';
+  document.getElementById('bool-result').title=reason;
+}
+
+/* ══════════════════════════════════════════
+   BFS VISUALISER
+══════════════════════════════════════════ */
+// 8×8 grid: 0=empty, 1-8=number, 9=wall(mine-adjacent/mine)
+const BFS_MAP=[
+  [9,9,0,0,0,9,9,9],
+  [9,1,1,1,0,1,9,9],
+  [9,1,0,0,0,1,1,9],
+  [9,1,0,0,0,0,1,9],
+  [9,1,1,2,1,1,1,9],
+  [9,9,9,9,9,9,9,9],
+  [9,0,0,0,0,0,1,9],
+  [9,1,1,1,1,1,1,9],
+];
+const BFS_ORIGIN=[0,2]; // where we clicked (row,col)
+let bfsQueue=[], bfsVisited=new Set(), bfsStep_=0, bfsAuto_=false, bfsAutoID=null;
+
+function bfsReset(){
+  clearInterval(bfsAutoID);bfsAuto_=false;
+  bfsQueue=[[...BFS_ORIGIN]];
+  bfsVisited=new Set([`${BFS_ORIGIN[0]},${BFS_ORIGIN[1]}`]);
+  bfsStep_=0;
+  bfsDraw();
+  document.getElementById('bfs-info').textContent='Click "Step" to begin. The green cell was just clicked — it has 0 nearby mines.';
+}
+
+function bfsDraw(){
+  const grid=document.getElementById('bfs-grid');
+  grid.innerHTML='';
+  for(let r=0;r<8;r++)for(let c=0;c<8;c++){
+    const el=document.createElement('div');
+    el.className='bfs-cell';
+    const k=`${r},${c}`;
+    const isOrigin=r===BFS_ORIGIN[0]&&c===BFS_ORIGIN[1];
+    const inQueue=bfsQueue.some(([qr,qc])=>qr===r&&qc===c);
+    const visited=bfsVisited.has(k)&&!inQueue;
+    const val=BFS_MAP[r][c];
+
+    if(val===9){el.classList.add('bfs-wall');}
+    else if(isOrigin&&bfsStep_===0){el.classList.add('bfs-origin');}
+    else if(inQueue){el.classList.add('bfs-queued');el.textContent='Q';}
+    else if(visited){
+      if(val===0){el.classList.add('bfs-visited');}
+      else{el.classList.add('bfs-number');el.textContent=val;el.style.color=NUM_COLORS_D[val];}
+    }else{
+      if(val===0){el.classList.add('bfs-empty');}
+      else{el.classList.add('bfs-number');el.textContent=val;el.style.color=NUM_COLORS_D[val];}
+    }
+    grid.appendChild(el);
+  }
+}
+
+function bfsStep(){
+  if(bfsQueue.length===0){
+    document.getElementById('bfs-info').textContent='✅ BFS complete! Queue is empty. All connected empty cells have been revealed.';
+    return;
+  }
+  const [r,c]=bfsQueue.shift();
+  bfsStep_++;
+  let added=0;
+  const dirs=[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
+  dirs.forEach(([dr,dc])=>{
+    const nr=r+dr,nc=c+dc;
+    if(nr<0||nr>=8||nc<0||nc>=8)return;
+    const k=`${nr},${nc}`;
+    const val=BFS_MAP[nr][nc];
+    if(val!==9&&!bfsVisited.has(k)){
+      bfsVisited.add(k);
+      if(val===0)bfsQueue.push([nr,nc]);
+      added++;
+    }
+  });
+  bfsDraw();
+  const info=`Step ${bfsStep_}: Processed (${r},${c}). Added ${added} new cells to queue. Queue now has ${bfsQueue.length} item(s).`;
+  document.getElementById('bfs-info').textContent=info;
+}
+
+function bfsAuto(){
+  if(bfsAutoID)clearInterval(bfsAutoID);
+  bfsAutoID=setInterval(()=>{
+    if(bfsQueue.length===0){clearInterval(bfsAutoID);return;}
+    bfsStep();
+  },500);
+}
+
+bfsReset();
+
+/* ══════════════════════════════════════════
+   QUIZ
+══════════════════════════════════════════ */
+const QUESTIONS=[
+  {q:"What does 'NOT is_revealed' mean in the reveal_cell() function?",
+   opts:["The cell has been revealed","The cell has NOT been revealed yet","The game is not over","The cell is flagged"],
+   ans:1,
+   ex:"'NOT is_revealed' evaluates to True only when is_revealed is False — i.e. the cell hasn't been opened yet. This is the first boolean guard in reveal_cell()."},
+  {q:"Why are mines placed AFTER the first click, not before?",
+   opts:["It's faster that way","So the board looks nicer","To guarantee the first click is always safe — mines avoid the safe zone","Because Python is slow"],
+   ans:2,
+   ex:"The first click position + its 8 neighbours form a 'safe zone'. Mines are placed after so they can avoid this zone, making sure the player never hits a mine on their very first click."},
+  {q:"What algorithm does flood_fill() use?",
+   opts:["Depth First Search (DFS)","Binary Search","Breadth First Search (BFS)","Bubble Sort"],
+   ans:2,
+   ex:"BFS uses a queue (deque) to explore cells level by level — all cells at distance 1 first, then distance 2, etc. This ensures the empty region is revealed outward from the clicked cell."},
+  {q:"The boolean expression for flood_fill's expansion is: 'NOT revealed AND NOT flagged AND NOT mine'. If is_flagged = True, what is the result?",
+   opts:["True — cell gets added to queue","False — cell is skipped","Depends on is_mine","Depends on is_revealed"],
+   ans:1,
+   ex:"NOT flagged = NOT True = False. Anything AND False = False. So the whole expression is False — the cell is skipped. AND requires ALL conditions to be True."},
+  {q:"How does check_win() decide you've won?",
+   opts:["When all flags are placed on mines","When the timer reaches 999","When the count of (NOT mine AND revealed) cells equals total_safe (90)","When you click the win button"],
+   ans:2,
+   ex:"total_safe = 100 cells − 10 mines = 90. check_win counts cells where is_mine=False AND is_revealed=True. When that count hits 90, every safe cell is open — win!"},
+];
+
+let qIdx=0,qAnswered=false;
+function buildQuiz(){
+  const c=document.getElementById('quiz-container');
+  c.innerHTML='';
+  const q=QUESTIONS[qIdx];
+  const isLast=qIdx===QUESTIONS.length-1;
+  const card=document.createElement('div');card.className='quiz-card';
+  card.innerHTML=`
+    <div class="quiz-q">
+      <span style="color:var(--text3);font-size:12px">Question ${qIdx+1} of ${QUESTIONS.length}</span><br><br>${q.q}
+    </div>
+    <div class="quiz-opts">${q.opts.map((o,i)=>`<button class="quiz-opt" onclick="answerQ(${i})">${o}</button>`).join('')}</div>
+    <div class="quiz-feedback" id="qfb"></div>
+    <div class="quiz-nav">
+      ${isLast
+        ? `<span id="q-next" style="display:none;font-size:13px;color:var(--green);font-weight:600">🎉 Quiz complete! You know your Minesweeper.</span>`
+        : `<button class="bfs-btn primary-btn" id="q-next" style="display:none" onclick="nextQ()">Next →</button>`
+      }
+    </div>`;
+  c.appendChild(card);
+  qAnswered=false;
+}
+
+function answerQ(i){
+  if(qAnswered)return;
+  qAnswered=true;
+  const q=QUESTIONS[qIdx];
+  const opts=document.querySelectorAll('.quiz-opt');
+  opts[i].classList.add(i===q.ans?'correct':'wrong');
+  opts[q.ans].classList.add('correct');
+  opts.forEach(o=>o.disabled=true);
+  const fb=document.getElementById('qfb');
+  fb.textContent=(i===q.ans?'✅ Correct! ':'❌ Not quite. ')+q.ex;
+  fb.className='quiz-feedback show '+(i===q.ans?'ok':'no');
+  const nxt=document.getElementById('q-next');
+  nxt.style.display = qIdx===QUESTIONS.length-1 ? 'block' : 'inline-flex';
+}
+
+function nextQ(){
+  if(qIdx<QUESTIONS.length-1){qIdx++;buildQuiz();}
+}
+
+buildQuiz();
+
+/* ══════════════════════════════════════════
+   NAV ACTIVE STATE (scroll spy)
+══════════════════════════════════════════ */
+const sections=document.querySelectorAll('section[id]');
+const navLinks=document.querySelectorAll('.nav-links a');
+window.addEventListener('scroll',()=>{
+  let cur='';
+  sections.forEach(s=>{if(window.scrollY>=s.offsetTop-100)cur=s.id;});
+  navLinks.forEach(a=>{a.classList.toggle('active',a.getAttribute('href')==='#'+cur);});
+},{passive:true});
+
+/* ══════════════════════════════════════════
+   AI HIGHLIGHT ASSISTANT
+══════════════════════════════════════════ */
+let aiPopupVisible=false;
+let currentSelection='';
+let aiHistory=[];  // {role, content}[]
+
+// ── Create the main AI panel ──
+const aiPanel=document.createElement('div');
+aiPanel.id='ai-panel';
+aiPanel.style.cssText=`
+  position:fixed;bottom:20px;right:20px;width:380px;max-height:580px;
+  background:#13132B;border:1px solid #2E2E58;border-radius:16px;
+  box-shadow:0 20px 60px rgba(0,0,0,.6),0 0 0 1px rgba(123,111,255,.15);
+  z-index:10000;display:none;flex-direction:column;overflow:hidden;
+  font-family:'Segoe UI',system-ui,sans-serif;
+`;
+aiPanel.innerHTML=`
+  <div id="ai-header" style="background:#1A1A38;padding:14px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #2E2E58;cursor:move;user-select:none;flex-shrink:0">
+    <div style="width:32px;height:32px;background:linear-gradient(135deg,#7B6FFF,#4DA6FF);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0">🤖</div>
+    <div style="flex:1">
+      <div style="font-size:13px;font-weight:600;color:#E8E8FF">Minesweeper AI Tutor</div>
+      <div style="font-size:11px;color:#5C5C90">Highlight anything · Ask anything</div>
+    </div>
+    <button id="ai-close" style="background:none;border:none;color:#5C5C90;font-size:18px;cursor:pointer;padding:2px 6px;border-radius:4px;line-height:1" title="Close">×</button>
+  </div>
+  <div id="ai-context-bar" style="display:none;background:#0D0D1F;border-bottom:1px solid #2E2E58;padding:8px 14px;font-size:11px;color:#9090C0;flex-shrink:0">
+    <span style="color:#5C5C90">Asking about: </span><span id="ai-context-text" style="color:#A084FF;font-style:italic"></span>
+  </div>
+  <div id="ai-messages" style="flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;min-height:200px;max-height:360px">
+    <div class="ai-msg ai-msg-bot">
+      <div class="ai-bubble" style="background:#1A1A38;border:1px solid #2E2E58">
+        👋 Hi! I'm your Minesweeper tutor.<br><br>
+        <strong>Highlight any text</strong> on this page and I'll explain it in detail — code, boolean logic, game concepts, anything.<br><br>
+        Or just ask me a question below!
+      </div>
+    </div>
+  </div>
+  <div style="padding:12px 14px;border-top:1px solid #2E2E58;background:#0D0D1F;flex-shrink:0">
+    <div style="display:flex;gap:8px;align-items:flex-end">
+      <textarea id="ai-input" placeholder="Ask anything about the code..." style="flex:1;background:#1A1A38;border:1px solid #2E2E58;border-radius:10px;padding:9px 12px;font-size:13px;color:#E8E8FF;resize:none;font-family:inherit;outline:none;height:40px;max-height:100px;line-height:1.4;overflow-y:auto" rows="1"></textarea>
+      <button id="ai-send" style="background:linear-gradient(135deg,#7B6FFF,#4DA6FF);border:none;border-radius:10px;width:40px;height:40px;cursor:pointer;font-size:16px;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:opacity .15s">➤</button>
+    </div>
+    <div style="font-size:10px;color:#3A3A6A;margin-top:6px;text-align:center">Powered by Claude · Highlight text to ask about it</div>
+  </div>
+`;
+document.body.appendChild(aiPanel);
+
+// ── Message bubble styles (injected) ──
+const aiStyle=document.createElement('style');
+aiStyle.textContent=`
+#ai-messages::-webkit-scrollbar{width:4px}
+#ai-messages::-webkit-scrollbar-thumb{background:#2E2E58;border-radius:2px}
+.ai-msg{display:flex;flex-direction:column;gap:3px}
+.ai-msg-user{align-items:flex-end}
+.ai-msg-bot{align-items:flex-start}
+.ai-bubble{padding:10px 13px;border-radius:12px;font-size:13px;line-height:1.65;color:#E8E8FF;max-width:100%;word-wrap:break-word}
+.ai-msg-user .ai-bubble{background:linear-gradient(135deg,rgba(123,111,255,.25),rgba(77,166,255,.15));border:1px solid rgba(123,111,255,.3)}
+.ai-msg-bot .ai-bubble{background:#1A1A38;border:1px solid #2E2E58}
+.ai-bubble code{background:#0D0D1F;border:1px solid #2E2E58;border-radius:4px;padding:1px 5px;font-family:'Cascadia Code','Fira Code',monospace;font-size:11px;color:#A084FF}
+.ai-bubble strong{color:#E8E8FF;font-weight:600}
+.ai-bubble em{color:#9090C0}
+.ai-typing{display:flex;gap:4px;align-items:center;padding:10px 13px}
+.ai-dot{width:6px;height:6px;border-radius:50%;background:#5C5C90;animation:aiDot 1.2s ease-in-out infinite}
+.ai-dot:nth-child(2){animation-delay:.2s}
+.ai-dot:nth-child(3){animation-delay:.4s}
+@keyframes aiDot{0%,80%,100%{transform:scale(.8);opacity:.5}40%{transform:scale(1.2);opacity:1}}
+#ai-input:focus{border-color:#7B6FFF;box-shadow:0 0 0 2px rgba(123,111,255,.15)}
+#ai-send:hover{opacity:.85}
+#ai-close:hover{background:#2E2E58;color:#E8E8FF}
+.src-jump-btn{background:var(--surface2);border:1px solid var(--border2);color:var(--text2);padding:4px 10px;border-radius:6px;font-size:11px;cursor:pointer;font-family:var(--font-mono);transition:all .15s}
+.src-jump-btn:hover{background:var(--surface3);color:var(--accent2);border-color:var(--accent)}
+.src-line{display:flex;gap:0;padding:0 8px;cursor:pointer;transition:background .1s;align-items:stretch}
+.src-line:hover{background:rgba(123,111,255,.07)}
+.src-line.src-hl{background:rgba(255,209,102,.1);border-left:2px solid #FFD166}
+.src-line.src-section-start{border-top:1px solid rgba(123,111,255,.2);margin-top:4px;padding-top:4px}
+.src-lnum{color:#3A3A6A;min-width:34px;text-align:right;padding-right:12px;font-size:11px;user-select:none;flex-shrink:0;padding-top:1px}
+.src-lcode{white-space:pre;color:#C8C8F0;font-size:11.5px;flex:1;padding:1px 0}
+.src-kw{color:#CC99FF}.src-fn{color:#5DADE2}.src-cm{color:#4A4A7A;font-style:italic}.src-str{color:#A8D8A8}.src-num{color:#F4A261}.src-dec{color:#F9C74F}.src-bool{color:#FF9944}.src-self{color:#C0E0FF}.src-op{color:#9090C0}
+#sel-tooltip-wrap{position:absolute;z-index:9999;display:none;flex-direction:column;gap:5px;align-items:center;pointer-events:auto}
+.sel-btn{color:#fff;font-size:12px;font-weight:600;padding:6px 13px;border-radius:18px;cursor:pointer;border:none;white-space:nowrap;box-shadow:0 4px 16px rgba(0,0,0,.4);font-family:'Segoe UI',system-ui,sans-serif;letter-spacing:.01em;transition:opacity .15s}
+.sel-btn:hover{opacity:.9}
+.sel-btn-ai{background:linear-gradient(135deg,#7B6FFF,#4DA6FF)}
+.sel-btn-src{background:linear-gradient(135deg,#FF9944,#FFD166);color:#1A1A38}
+`;
+document.head.appendChild(aiStyle);
+
+// ── Draggable panel ──
+(function(){
+  const hdr=document.getElementById('ai-header');
+  let dragging=false,ox=0,oy=0,moved=false;
+  hdr.addEventListener('mousedown',e=>{
+    dragging=true; moved=false;
+    const r=aiPanel.getBoundingClientRect();
+    ox=e.clientX-r.left; oy=e.clientY-r.top;
+  });
+  document.addEventListener('mousemove',e=>{
+    if(!dragging)return;
+    if(!moved){
+      // Only switch from right/bottom to left/top on first actual move
+      aiPanel.style.right='auto'; aiPanel.style.bottom='auto';
+      moved=true;
+    }
+    aiPanel.style.left=(e.clientX-ox)+'px';
+    aiPanel.style.top=(e.clientY-oy)+'px';
+  });
+  document.addEventListener('mouseup',()=>{dragging=false;});
+})();
+
+// ── Open / Close helpers ──
+function openAIPanel(){
+  aiPanel.style.left='';aiPanel.style.top='';
+  aiPanel.style.bottom='20px';aiPanel.style.right='20px';
+  aiPanel.style.display='flex';
+  aiPopupVisible=true;
+}
+function closeAIPanel(){
+  aiPanel.style.display='none';
+  aiPopupVisible=false;
+  aiPanel.style.left='';aiPanel.style.top='';
+  aiPanel.style.bottom='20px';aiPanel.style.right='20px';
+}
+document.getElementById('ai-close').onclick=closeAIPanel;
+
+// ── Create two-button selection tooltip ──
+const selWrap=document.createElement('div');
+selWrap.id='sel-tooltip-wrap';
+selWrap.style.cssText='position:absolute;z-index:9999;display:none;flex-direction:column;gap:5px;align-items:center;pointer-events:auto';
+selWrap.innerHTML=`
+  <button class="sel-btn sel-btn-ai" id="sel-btn-ai">💬 Ask AI about this</button>
+  <button class="sel-btn sel-btn-src" id="sel-btn-src">📄 Show in source code</button>
+`;
+document.body.appendChild(selWrap);
+// keep selTooltip as alias so old references don't break
+const selTooltip=selWrap;
+
+// ── Selection tooltip logic ──
+function isCodeSelection(range){
+  // Walk up from selection container — check if it's inside a code element
+  let node=range.startContainer;
+  while(node&&node!==document.body){
+    if(node.nodeType===1){
+      const tag=node.tagName?node.tagName.toLowerCase():'';
+      const cls=node.className||'';
+      // code-line in source viewer, code snippets, mono blocks
+      if(tag==='code'||tag==='pre'||
+         cls.includes('src-line')||cls.includes('src-lcode')||
+         cls.includes('tl-code')||cls.includes('sfp-mono')||
+         cls.includes('bool-rule-code')||cls.includes('annotated-line')||
+         cls.includes('code-body')||cls.includes('src-lines')||
+         cls.includes('src-lines-inline'))return true;
+    }
+    node=node.parentNode;
+  }
+  return false;
+}
+
+document.addEventListener('mouseup',e=>{
+  if(aiPanel.contains(e.target)||selWrap.contains(e.target))return;
+  setTimeout(()=>{
+    const sel=window.getSelection();
+    const text=sel?sel.toString().trim():'';
+    if(text.length>3){
+      currentSelection=text;
+      const range=sel.getRangeAt(0);
+      const rect=range.getBoundingClientRect();
+      selWrap.style.display='flex';
+      selWrap.style.position='absolute';
+      // Show "find in source" only for code selections
+      const inCode=isCodeSelection(range);
+      // hide it when inside the source viewers themselves (already there)
+      const inSrcViewer=(document.getElementById('src-lines')&&document.getElementById('src-lines').contains(range.startContainer))||(document.getElementById('src-lines-inline')&&document.getElementById('src-lines-inline').contains(range.startContainer));
+      const showSrcBtn=inCode&&!inSrcViewer;
+      document.getElementById('sel-btn-src').style.display=showSrcBtn?'block':'none';
+      const wrapW=showSrcBtn?160:140;
+      selWrap.style.left=Math.min(rect.left+rect.width/2-wrapW/2, window.innerWidth-wrapW-10)+'px';
+      selWrap.style.top=(rect.top+window.scrollY-78)+'px';
+    }else{
+      selWrap.style.display='none';
+      currentSelection='';
+    }
+  },10);
+});
+
+document.addEventListener('mousedown',e=>{
+  if(!aiPanel.contains(e.target)&&!selWrap.contains(e.target)){
+    selWrap.style.display='none';
+  }
+});
+
+// ── Ask AI button ──
+document.getElementById('sel-btn-ai').onclick=()=>{
+  selWrap.style.display='none';
+  openAIPanel();
+  const bar=document.getElementById('ai-context-bar');
+  const ctx=document.getElementById('ai-context-text');
+  const short=currentSelection.length>60?currentSelection.slice(0,60)+'…':currentSelection;
+  ctx.textContent='"'+short+'"';
+  bar.style.display='block';
+  askAI('Why does this say: "'+currentSelection+'"?  Explain it simply in context of the Minesweeper game and code.', currentSelection);
+  window.getSelection().removeAllRanges();
+};
+
+// ── Show in source code button ──
+document.getElementById('sel-btn-src').onclick=()=>{
+  selWrap.style.display='none';
+  showInSourceCode(currentSelection);
+  window.getSelection().removeAllRanges();
+};
+
+function showInSourceCode(searchText){
+  // Prefer inline tab — switch to it
+  const codeSection=document.getElementById('code');
+  const tabBar=document.getElementById('code-tab-bar');
+  const srcTabBtn=tabBar?tabBar.querySelector('.tab-btn-src'):null;
+  if(srcTabBtn){
+    switchTab(srcTabBtn,'tab-source-inline');
+    if(codeSection)codeSection.scrollIntoView({behavior:'smooth'});
+  } else {
+    openSrcPanel();
+    srcPanelSwitchTab('src-fp-source');
+  }
+  // Determine which src-lines container to search
+  setTimeout(()=>{
+    const inlineActive=document.getElementById('tab-source-inline')&&document.getElementById('tab-source-inline').classList.contains('active');
+    const container=inlineActive?document.getElementById('src-lines-inline'):document.getElementById('src-lines');
+    if(!container)return;
+    const lines=container.querySelectorAll('.src-line');
+    const matchEls=[];
+    const needle=searchText.toLowerCase().replace(/[^a-z0-9_\s]/g,'').trim().slice(0,40);
+    lines.forEach(line=>{
+      const txt=line.querySelector('.src-lcode');
+      if(!txt)return;
+      const haystack=txt.textContent.toLowerCase().replace(/[^a-z0-9_\s]/g,'');
+      const matches=needle.length>2&&haystack.includes(needle);
+      line.classList.toggle('src-hl',matches);
+      if(matches)matchEls.push(line);
+    });
+    if(matchEls.length===0){
+      const box=container;
+      if(box){box.style.boxShadow='0 0 0 2px #FFD166';setTimeout(()=>box.style.boxShadow='',1200);}
+    } else {
+      flashLineEl(matchEls[0]);
+      if(matchEls.length>1) showSrcMultiMatchPopup(matchEls);
+    }
+  },500);
+}
+
+let _srcMatchEls=[],_srcMatchIdx=0;
+function showSrcMultiMatchPopup(els){
+  _srcMatchEls=els; _srcMatchIdx=0;
+  // Show whichever popup is relevant
+  const inlineActive=document.getElementById('tab-source-inline')&&document.getElementById('tab-source-inline').classList.contains('active');
+  const popupId=inlineActive?'src-multi-popup-inline':'src-multi-popup';
+  const popup=document.getElementById(popupId);
+  if(popup)popup.style.display='flex';
+  updateSrcMultiLabel();
+}
+function updateSrcMultiLabel(){
+  // Update both sets of labels
+  ['','inline'].forEach(sfx=>{
+    const lbl=document.getElementById('src-multi-label'+(sfx?'-'+sfx:''));
+    const pos=document.getElementById('src-multi-pos'+(sfx?'-'+sfx:''));
+    if(lbl)lbl.textContent=`${_srcMatchEls.length} matches found`;
+    if(pos)pos.textContent=`${_srcMatchIdx+1}/${_srcMatchEls.length}`;
+  });
+}
+function srcMultiPrev(){
+  if(_srcMatchEls.length===0)return;
+  _srcMatchIdx=(_srcMatchIdx-1+_srcMatchEls.length)%_srcMatchEls.length;
+  flashLineEl(_srcMatchEls[_srcMatchIdx]);
+  updateSrcMultiLabel();
+}
+function srcMultiNext(){
+  if(_srcMatchEls.length===0)return;
+  _srcMatchIdx=(_srcMatchIdx+1)%_srcMatchEls.length;
+  flashLineEl(_srcMatchEls[_srcMatchIdx]);
+  updateSrcMultiLabel();
+}
+function closeSrcMultiPopup(){
+  ['src-multi-popup','src-multi-popup-inline'].forEach(id=>{
+    const popup=document.getElementById(id);
+    if(popup)popup.style.display='none';
+  });
+  document.querySelectorAll('.src-line.src-hl').forEach(l=>l.classList.remove('src-hl'));
+  _srcMatchEls=[];_srcMatchIdx=0;
+}
+function flashLineEl(el){
+  if(!el)return;
+  el.scrollIntoView({behavior:'smooth',block:'center'});
+  let fc=0;
+  function doF(){
+    el.classList.add('src-hl');
+    setTimeout(()=>{
+      el.classList.remove('src-hl');
+      fc++;
+      if(fc<3)setTimeout(doF,200);
+      else el.classList.add('src-hl'); // leave highlighted after flashing
+    },300);
+  }
+  doF();
+}
+
+/* ══════════════════════════════════════════
+   SOURCE CODE RENDERER
+══════════════════════════════════════════ */
+const SOURCE_CODE=`"""
+Minesweeper | Tkinter GUI | Boolean Algebra Edition
+=====================================================
+Concepts: OOP, Boolean Algebra, BFS (Flood Fill), Event-Driven GUI
+
+Boolean Algebra used throughout:
+  - Reveal cell only if: NOT revealed AND NOT flagged
+  - Place mine only if:  NOT safe_zone AND NOT already_mine
+  - Count win cell if:   NOT mine AND IS revealed
+  - Toggle flag only if: NOT revealed
+  - Accept click only if: NOT game_over
+"""
+
+# ── Imports ───────────────────────────────────────────────────────
+import tkinter as tk
+from tkinter import messagebox, simpledialog
+import random
+import time
+from collections import deque
+
+# ── Constants ─────────────────────────────────────────────────────
+ROWS         = 10
+COLUMNS      = 10
+TOTAL_MINES  = 10
+
+BG           = "#13132B"
+CELL_HIDDEN  = "#252545"
+CELL_BORDER  = "#32325A"
+CELL_REVEAL  = "#181830"
+CELL_MINE    = "#4A1530"
+CELL_WRONG   = "#3A2A10"
+MINE_FG      = "#E05050"
+TIMER_FG     = "#5090FF"
+
+NUMBER_COLORS = {
+    1: "#5599FF", 2: "#55DD88", 3: "#FF6655",
+    4: "#AA66FF", 5: "#FFAA44", 6: "#44DDDD",
+    7: "#FF77CC", 8: "#AAAAAA"
+}
+CELL_W = 46
+CELL_H = 46
+
+
+# ── Cell Class ────────────────────────────────────────────────────
+class Cell:
+    """Stores state for one board square. No game logic here."""
+
+    def __init__(self):
+        self.is_mine         = False
+        self.is_revealed     = False
+        self.is_flagged      = False
+        self.neighbour_count = 0
+        self.canvas          = None
+
+
+# ── MinesweeperGame Class ─────────────────────────────────────────
+class MinesweeperGame:
+    """Controls the entire game: UI, logic, timer, leaderboard."""
+
+    def __init__(self):
+        self.window = tk.Tk()
+        self.window.title("Minesweeper")
+        self.window.configure(bg=BG)
+        self.first_click   = True
+        self.game_over     = False
+        self.game_won      = False
+        self.start_time    = None
+        self.leaderboard   = []
+        self.board         = []
+        self.timer_var     = tk.StringVar(value="0s")
+        self.mine_var      = tk.StringVar(value=str(TOTAL_MINES))
+        self._build_interface()
+        self._build_board()
+        self.connect_buttons()
+        self.update_timer()
+
+    def _build_board(self):
+        """Creates 10x10 Cell objects, each drawn on a Canvas."""
+        self.board = []
+        for row in range(ROWS):
+            row_list = []
+            for col in range(COLUMNS):
+                cell = Cell()
+                cv = tk.Canvas(self.board_frame,
+                    width=CELL_W, height=CELL_H,
+                    bg=CELL_HIDDEN, cursor="hand2")
+                cv.grid(row=row, column=col, padx=2, pady=2)
+                cell.canvas = cv
+                row_list.append(cell)
+            self.board.append(row_list)
+
+    def connect_buttons(self):
+        """Binds left/right click to every cell canvas."""
+        for row in range(ROWS):
+            for col in range(COLUMNS):
+                cv = self.board[row][col].canvas
+                cv.bind("<Button-1>",
+                    lambda e, r=row, c=col: self.left_click(r, c))
+                cv.bind("<Button-3>",
+                    lambda e, r=row, c=col: self.right_click(e, r, c))
+
+    def get_neighbours(self, row, col):
+        """Returns valid (row, col) pairs for up to 8 neighbours."""
+        neighbours = []
+        for dr in [-1, 0, 1]:
+            for dc in [-1, 0, 1]:
+                if dr == 0 and dc == 0:
+                    continue
+                nr, nc = row + dr, col + dc
+                if 0 <= nr < ROWS and 0 <= nc < COLUMNS:
+                    neighbours.append((nr, nc))
+        return neighbours
+
+    def place_mines(self, first_row, first_col):
+        """Places mines. Boolean: NOT safe_zone AND NOT already_mine."""
+        safe = {(first_row, first_col)}
+        for pos in self.get_neighbours(first_row, first_col):
+            safe.add(pos)
+        placed = 0
+        while placed < TOTAL_MINES:
+            r = random.randint(0, ROWS - 1)
+            c = random.randint(0, COLUMNS - 1)
+            if (r, c) not in safe and not self.board[r][c].is_mine:
+                self.board[r][c].is_mine = True
+                placed += 1
+        self.calculate_neighbour_numbers()
+
+    def calculate_neighbour_numbers(self):
+        """Counts adjacent mines for every safe cell."""
+        for row in range(ROWS):
+            for col in range(COLUMNS):
+                cell = self.board[row][col]
+                if cell.is_mine:
+                    continue
+                cell.neighbour_count = sum(
+                    1 for nr, nc in self.get_neighbours(row, col)
+                    if self.board[nr][nc].is_mine
+                )
+
+    def reveal_cell(self, row, col):
+        """Reveals one cell. Boolean: NOT revealed AND NOT flagged."""
+        cell = self.board[row][col]
+        # Boolean guard
+        if cell.is_revealed or cell.is_flagged:
+            return
+        if self.first_click:
+            self.first_click = False
+            self.place_mines(row, col)
+            self.start_time = time.time()
+            cell = self.board[row][col]
+        cell.is_revealed = True
+        if cell.is_mine:
+            # Boolean: is_mine = True → game over
+            self.game_over = True
+            self.reveal_all_mines()
+            return
+        if cell.neighbour_count == 0:
+            self.flood_fill(row, col)
+        self.check_win()
+
+    def flood_fill(self, start_row, start_col):
+        """BFS: auto-reveals connected empty region."""
+        queue = deque([(start_row, start_col)])
+        while queue:
+            row, col = queue.popleft()
+            for nr, nc in self.get_neighbours(row, col):
+                cell = self.board[nr][nc]
+                # Boolean: NOT revealed AND NOT flagged AND NOT mine
+                if not cell.is_revealed and not cell.is_flagged and not cell.is_mine:
+                    cell.is_revealed = True
+                    self._draw_cell(nr, nc)
+                    if cell.neighbour_count == 0:
+                        queue.append((nr, nc))
+
+    def toggle_flag(self, row, col):
+        """Places or removes flag. Boolean: only if NOT revealed."""
+        cell = self.board[row][col]
+        if cell.is_revealed:   # Boolean: NOT revealed required
+            return
+        cell.is_flagged = not cell.is_flagged
+        self._draw_cell(row, col)
+
+    def check_win(self):
+        """Win if all safe cells revealed. Boolean: NOT mine AND revealed."""
+        total_safe    = ROWS * COLUMNS - TOTAL_MINES
+        revealed_safe = sum(
+            1 for r in range(ROWS) for c in range(COLUMNS)
+            if not self.board[r][c].is_mine and self.board[r][c].is_revealed
+        )
+        if revealed_safe == total_safe:
+            self.game_over = True
+            self.game_won  = True
+
+    def left_click(self, row, col):
+        """Boolean: accept only if NOT game_over."""
+        if not self.game_over:
+            self.reveal_cell(row, col)
+
+    def right_click(self, event, row, col):
+        """Boolean: accept only if NOT game_over."""
+        if not self.game_over:
+            self.toggle_flag(row, col)
+
+    def update_timer(self):
+        """Self-scheduling timer. Boolean: NOT game_over AND start_time set."""
+        if not self.game_over and self.start_time is not None:
+            elapsed = int(time.time() - self.start_time)
+            self.timer_var.set(f"{elapsed}s")
+        if not self.game_over:
+            self.window.after(1000, self.update_timer)
+
+
+# ── Entry Point ───────────────────────────────────────────────────
+game = MinesweeperGame()
+game.window.mainloop()`;
+
+// Section anchors: line number → anchor id
+const SRC_ANCHORS={
+  1:'src-imports',
+  15:'src-imports',
+  22:'src-constants',
+  52:'src-cell',
+  65:'src-game',
+  66:'src-game',
+  109:'src-reveal',
+  130:'src-bfs',
+  143:'src-win',
+  157:'src-entry'
+};
+
+// Keywords for syntax highlighting
+function highlightLine(raw){
+  let s=raw
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  // order matters — most specific first
+  s=s.replace(/(#[^\n]*$)/,'<span class="src-cm">$1</span>');
+  if(s.includes('src-cm'))return s; // comment line done
+  s=s.replace(/"""[\s\S]*?"""|'''[\s\S]*?'''/g,m=>`<span class="src-str">${m}</span>`);
+  s=s.replace(/(["'])(?:(?=(\\?))\2.)*?\1/g,m=>`<span class="src-str">${m}</span>`);
+  s=s.replace(/\b(def|class|if|elif|else|for|while|return|import|from|in|not|and|or|continue|lambda|pass)\b/g,'<span class="src-kw">$1</span>');
+  s=s.replace(/\b(True|False|None)\b/g,'<span class="src-bool">$1</span>');
+  s=s.replace(/\b(self)\b/g,'<span class="src-self">$1</span>');
+  s=s.replace(/\b(\d+)\b/g,'<span class="src-num">$1</span>');
+  s=s.replace(/(?<=\bdef\s+)(\w+)/g,'<span class="src-fn">$1</span>');
+  s=s.replace(/(?<=\bclass\s+)(\w+)/g,'<span class="src-dec">$1</span>');
+  return s;
+}
+
+function buildSourceCodeInto(container){
+  if(!container)return;
+  const lines=SOURCE_CODE.split('\n');
+  const isFloating=container.id==='src-lines';
+  lines.forEach((raw,i)=>{
+    const ln=i+1;
+    const div=document.createElement('div');
+    div.className='src-line';
+    // anchor ids — prefix for inline vs floating
+    const anchorId=SRC_ANCHORS[ln];
+    if(anchorId)div.id=(isFloating?'':'il-')+anchorId;
+    if([15,22,52,65,109,130,143,157].includes(ln))div.classList.add('src-section-start');
+    div.innerHTML=`<span class="src-lnum">${ln}</span><span class="src-lcode">${highlightLine(raw)||' '}</span>`;
+    div.title=getSectionName(ln);
+    div.addEventListener('click',()=>{
+      const lineText=raw.trim();
+      if(!lineText||lineText.startsWith('#')||lineText.startsWith('"""'))return;
+      openAIPanel();
+      document.getElementById('ai-context-bar').style.display='block';
+      document.getElementById('ai-context-text').textContent=`Line ${ln}: "${lineText.slice(0,50)}${lineText.length>50?'…':''}"`;
+      askAI(`Explain line ${ln} of the source code: "${lineText}" — what does it do and why is it written this way?`, lineText);
+    });
+    container.appendChild(div);
+  });
+}
+
+function buildSourceCode(){
+  buildSourceCodeInto(document.getElementById('src-lines'));
+  buildSourceCodeInto(document.getElementById('src-lines-inline'));
+}
+
+function getSectionName(ln){
+  if(ln<=13)return'Module docstring';
+  if(ln<=20)return'Imports';
+  if(ln<=51)return'Constants & colour palette';
+  if(ln<=64)return'Cell class';
+  if(ln<=108)return'MinesweeperGame — setup';
+  if(ln<=129)return'reveal_cell()';
+  if(ln<=142)return'flood_fill() — BFS';
+  if(ln<=156)return'check_win() / click handlers';
+  return'Entry point';
+}
+
+function jumpToLine(anchorId){
+  // Prefer inline tab if it's active/visible
+  const inlineEl=document.getElementById('il-'+anchorId);
+  const floatEl=document.getElementById(anchorId);
+  // Check if inline source tab is active
+  const inlinePanel=document.getElementById('tab-source-inline');
+  const inlineActive=inlinePanel&&inlinePanel.classList.contains('active');
+  const el=(inlineActive&&inlineEl)?inlineEl:floatEl||inlineEl;
+  if(!el)return;
+  el.scrollIntoView({behavior:'smooth',block:'center'});
+  let fc=0;
+  function doFlash(){
+    el.classList.add('src-hl');
+    setTimeout(()=>{
+      el.classList.remove('src-hl');
+      fc++;
+      if(fc<3)setTimeout(doFlash,200);
+    },300);
+  }
+  setTimeout(doFlash,300);
+}
+
+// ══════════════════════════════════════════
+//  FLOATING SOURCE CODE PANEL
+// ══════════════════════════════════════════
+
+// Inject styles
+const srcPanelStyle=document.createElement('style');
+srcPanelStyle.textContent=`
+#src-panel{
+  position:fixed;top:64px;right:20px;width:460px;height:calc(100vh - 84px);max-height:860px;
+  background:#13132B;border:1px solid #2E2E58;border-radius:16px;
+  box-shadow:0 20px 60px rgba(0,0,0,.7),0 0 0 1px rgba(123,111,255,.15);
+  z-index:9997;display:none;flex-direction:column;overflow:hidden;
+  font-family:'Segoe UI',system-ui,sans-serif;
+  transition:opacity .2s,transform .2s;
+}
+#src-panel.open{display:flex}
+#src-panel-header{
+  background:#1A1A38;padding:12px 14px;
+  display:flex;align-items:center;gap:10px;
+  border-bottom:1px solid #2E2E58;flex-shrink:0;cursor:move;user-select:none;
+}
+#src-panel-tabbar{
+  display:flex;gap:3px;background:#0D0D1F;border-bottom:1px solid #2E2E58;
+  padding:6px 10px;flex-shrink:0;flex-wrap:wrap;
+}
+.src-fp-tab{
+  padding:5px 12px;border:none;background:transparent;color:#9090C0;
+  font-size:12px;font-family:'Segoe UI',system-ui,sans-serif;font-weight:500;
+  border-radius:6px;cursor:pointer;transition:all .15s;white-space:nowrap;
+}
+.src-fp-tab:hover{background:#22224A;color:#E8E8FF;}
+.src-fp-tab.active{background:#22224A;color:#E8E8FF;box-shadow:0 1px 3px rgba(0,0,0,.4)}
+.src-fp-tab.src-tab{color:#A084FF;background:rgba(123,111,255,.12);border:1px solid rgba(123,111,255,.2)}
+.src-fp-tab.src-tab.active{background:rgba(123,111,255,.25);color:#C8B0FF}
+.src-fp-panel{display:none;flex:1;overflow-y:auto;padding:14px 16px;flex-direction:column;gap:0}
+.src-fp-panel.active{display:flex}
+/* Source code panel specific */
+#src-fp-source-wrap{display:none;flex:1;flex-direction:column;overflow:hidden}
+#src-fp-source-wrap.active{display:flex}
+#src-fp-jump-row{
+  display:flex;gap:5px;flex-wrap:wrap;padding:8px 12px;
+  background:#0D0D1F;border-bottom:1px solid #2E2E58;flex-shrink:0;
+}
+#src-lines{overflow-y:auto;flex:1;padding:6px 0;font-family:'Cascadia Code','Fira Code','Consolas',monospace;font-size:11.5px;line-height:1.8;display:block}
+#src-multi-popup{
+  display:none;position:absolute;bottom:12px;left:50%;transform:translateX(-50%);
+  background:#1A1A38;border:1px solid #7B6FFF;border-radius:10px;
+  padding:8px 14px;align-items:center;gap:10px;
+  box-shadow:0 4px 20px rgba(0,0,0,.5);z-index:10;white-space:nowrap;min-width:260px;
+}
+.src-multi-btn{
+  background:#22224A;border:1px solid #3A3A6A;color:#9090C0;
+  padding:4px 10px;border-radius:6px;font-size:11px;cursor:pointer;
+  font-family:'Cascadia Code',monospace;transition:all .15s;
+}
+.src-multi-btn:hover{background:#2E2E58;color:#E8E8FF;}
+.src-multi-btn.danger{border-color:#FF5566;color:#FF5566}
+.src-multi-btn.danger:hover{background:rgba(255,85,102,.1)}
+/* Scrollbar inside source panel */
+#src-lines::-webkit-scrollbar{width:5px}
+#src-lines::-webkit-scrollbar-track{background:#0D0D1F}
+#src-lines::-webkit-scrollbar-thumb{background:#2E2E58;border-radius:3px}
+.src-fp-panel::-webkit-scrollbar{width:5px}
+.src-fp-panel::-webkit-scrollbar-track{background:#0D0D1F}
+.src-fp-panel::-webkit-scrollbar-thumb{background:#2E2E58;border-radius:3px}
+/* Compact cards inside panel */
+.sfp-card{background:#1A1A38;border:1px solid #2E2E58;border-radius:8px;padding:12px 14px;margin-bottom:10px}
+.sfp-card-title{font-size:13px;font-weight:600;color:#E8E8FF;margin-bottom:6px;display:flex;align-items:center;gap:8px}
+.sfp-card-sub{font-size:11px;color:#9090C0;line-height:1.6}
+.sfp-mono{font-family:'Cascadia Code','Fira Code',monospace;font-size:11px;background:#0D0D1F;border:1px solid #2E2E58;border-radius:6px;padding:8px 10px;margin-top:8px;color:#A084FF;white-space:pre-wrap;line-height:1.7}
+.sfp-var-row{display:flex;align-items:flex-start;gap:8px;padding:7px 0;border-bottom:1px solid #1A1A38;font-size:12px}
+.sfp-var-row:last-child{border-bottom:none}
+.sfp-vname{font-family:'Cascadia Code',monospace;color:#A084FF;min-width:140px;flex-shrink:0;font-size:11px}
+.sfp-vtype{display:inline-block;font-size:10px;padding:1px 6px;border-radius:4px;font-weight:600;flex-shrink:0;margin-top:1px}
+.sfp-vdesc{color:#9090C0;font-size:11.5px;line-height:1.5}
+.sfp-fn-item{padding:8px 0;border-bottom:1px solid #1A1A38}
+.sfp-fn-item:last-child{border-bottom:none}
+.sfp-fn-name{font-family:'Cascadia Code',monospace;font-size:12px;color:#5DADE2;font-weight:600;margin-bottom:3px}
+.sfp-fn-desc{font-size:11.5px;color:#9090C0;line-height:1.5}
+.sfp-flow-node{background:#1A1A38;border:1px solid #2E2E58;border-radius:8px;padding:8px 12px;text-align:center;font-size:11.5px;color:#E8E8FF;margin:3px auto;min-width:160px;max-width:90%}
+.sfp-flow-arrow{text-align:center;color:#3A3A6A;font-size:12px;line-height:1.2;margin:1px 0}
+.sfp-flow-label{text-align:center;font-size:10px;color:#5C5C90;margin:0}
+.sfp-section-hdr{font-size:11px;font-weight:700;letter-spacing:.08em;color:#5C5C90;text-transform:uppercase;margin:14px 0 8px;padding-bottom:4px;border-bottom:1px solid #2E2E58}
+`;
+document.head.appendChild(srcPanelStyle);
+
+// Build the floating panel DOM — source code only
+const srcPanel=document.createElement('div');
+srcPanel.id='src-panel';
+srcPanel.innerHTML=`
+  <div id="src-panel-header">
+    <div style="width:28px;height:28px;background:linear-gradient(135deg,#7B6FFF,#4DA6FF);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0">📄</div>
+    <div style="flex:1">
+      <div style="font-size:13px;font-weight:600;color:#E8E8FF">Source Code</div>
+      <div style="font-size:10px;color:#5C5C90">minesweeper.py — click any line to ask AI</div>
+    </div>
+    <button onclick="closeSrcPanel()" style="background:none;border:none;color:#5C5C90;font-size:18px;cursor:pointer;padding:2px 6px;border-radius:4px;line-height:1" title="Close">×</button>
+  </div>
+
+  <!-- Jump buttons row -->
+  <div id="src-fp-jump-row">
+    <button class="src-jump-btn" onclick="jumpToLine('src-imports')">Imports</button>
+    <button class="src-jump-btn" onclick="jumpToLine('src-constants')">Constants</button>
+    <button class="src-jump-btn" onclick="jumpToLine('src-cell')">Cell</button>
+    <button class="src-jump-btn" onclick="jumpToLine('src-game')">Game</button>
+    <button class="src-jump-btn" onclick="jumpToLine('src-reveal')">reveal_cell</button>
+    <button class="src-jump-btn" onclick="jumpToLine('src-bfs')">flood_fill</button>
+    <button class="src-jump-btn" onclick="jumpToLine('src-win')">check_win</button>
+    <button class="src-jump-btn" onclick="jumpToLine('src-entry')">Entry</button>
+  </div>
+
+  <!-- File bar -->
+  <div style="background:#0D0D1F;border-bottom:1px solid #2E2E58;padding:8px 14px;display:flex;align-items:center;gap:8px;flex-shrink:0">
+    <div style="display:flex;gap:4px">
+      <div style="width:10px;height:10px;border-radius:50%;background:#FF5F57"></div>
+      <div style="width:10px;height:10px;border-radius:50%;background:#FEBC2E"></div>
+      <div style="width:10px;height:10px;border-radius:50%;background:#28C840"></div>
+    </div>
+    <span style="font-size:11px;color:#9090C0;font-family:'Cascadia Code',monospace;margin-left:4px">minesweeper.py</span>
+    <span id="src-match-info" style="margin-left:auto;font-size:10px;color:#3A3A6A">click any line · ask AI instantly</span>
+  </div>
+
+  <!-- Source lines -->
+  <div style="position:relative;flex:1;overflow:hidden;display:flex;flex-direction:column">
+    <div id="src-lines"></div>
+    <!-- Multi-match popup -->
+    <div id="src-multi-popup" style="display:none;position:sticky;bottom:0;left:0;right:0;background:rgba(26,26,56,.97);border-top:1px solid #7B6FFF;padding:8px 14px;flex-direction:row;align-items:center;gap:10px;z-index:10">
+      <span style="font-size:11px;color:#9090C0" id="src-multi-label">0 matches</span>
+      <div style="display:flex;gap:5px;margin-left:auto;align-items:center">
+        <button class="src-multi-btn" onclick="srcMultiPrev()">← Prev</button>
+        <span id="src-multi-pos" style="font-size:11px;color:#A084FF;font-family:'Cascadia Code',monospace;padding:2px 6px">1/1</span>
+        <button class="src-multi-btn" onclick="srcMultiNext()">Next →</button>
+        <button class="src-multi-btn danger" onclick="closeSrcMultiPopup()">✕</button>
+      </div>
+    </div>
+  </div>
+`;
+document.body.appendChild(srcPanel);
+
+// Draggable
+(function(){
+  const hdr=document.getElementById('src-panel-header');
+  let dr=false,ox=0,oy=0;
+  hdr.addEventListener('mousedown',e=>{
+    dr=true;
+    const r=srcPanel.getBoundingClientRect();
+    ox=e.clientX-r.left;oy=e.clientY-r.top;
+    srcPanel.style.right='auto';
+  });
+  document.addEventListener('mousemove',e=>{
+    if(!dr)return;
+    srcPanel.style.left=(e.clientX-ox)+'px';
+    srcPanel.style.top=(e.clientY-oy)+'px';
+    srcPanel.style.bottom='auto';
+  });
+  document.addEventListener('mouseup',()=>{dr=false;});
+})();
+
+function openSrcPanel(){srcPanel.classList.add('open');}
+function closeSrcPanel(){srcPanel.classList.remove('open');}
+function toggleSrcPanel(){srcPanel.classList.toggle('open');}
+
+function srcPanelSwitchTab(id){
+  // Floating panel now has source code only — just open it
+  openSrcPanel();
+}
+
+// Build on load
+buildSourceCode();
+
+// ── Send button / Enter key ──
+const aiInput=document.getElementById('ai-input');
+const aiSend=document.getElementById('ai-send');
+
+aiInput.addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&!e.shiftKey){
+    e.preventDefault();
+    sendUserMessage();
+  }
+});
+aiInput.addEventListener('input',()=>{
+  aiInput.style.height='40px';
+  aiInput.style.height=Math.min(aiInput.scrollHeight,100)+'px';
+});
+aiSend.onclick=sendUserMessage;
+
+function sendUserMessage(){
+  const txt=aiInput.value.trim();
+  if(!txt)return;
+  aiInput.value='';
+  aiInput.style.height='40px';
+  // Clear context bar for manual questions
+  document.getElementById('ai-context-bar').style.display='none';
+  currentSelection='';
+  askAI(txt, null);
+}
+
+// ── Core AI call ──
+async function askAI(userMsg, highlightedText){
+  // Show panel (only if not already open, to avoid resetting drag position)
+  if(!aiPopupVisible)openAIPanel();
+
+  // Add user bubble
+  addMessage('user', highlightedText
+    ? '🔍 <em>Highlighted:</em> "'+escHtml(highlightedText.length>80?highlightedText.slice(0,80)+'…':highlightedText)+'"'
+    : escHtml(userMsg));
+
+  // Typing indicator
+  const typing=document.createElement('div');
+  typing.className='ai-msg ai-msg-bot';
+  typing.innerHTML='<div class="ai-bubble ai-typing"><div class="ai-dot"></div><div class="ai-dot"></div><div class="ai-dot"></div></div>';
+  document.getElementById('ai-messages').appendChild(typing);
+  scrollToBottom();
+
+  // Build history for context
+  const messages=[...aiHistory,{role:'user',content:userMsg}];
+
+  try{
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-6',
+        max_tokens:1000,
+        system:`You are an expert tutor explaining a Python Minesweeper game built for a BCA first-year student's CIA-1 assignment at CHRIST University. The game uses:
+- Two classes: Cell (data container for each square) and MinesweeperGame (all game logic)
+- Boolean algebra throughout: NOT revealed AND NOT flagged to reveal, NOT revealed to flag, etc.
+- BFS flood fill using deque for auto-revealing empty regions
+- Tkinter GUI with Canvas widgets
+- 10×10 board, 10 mines, safe first click (mines placed after first click)
+
+When explaining: be friendly, use simple analogies, explain WHY not just WHAT. Format responses with **bold** for key terms, \`code\` for variable names/functions. Keep responses focused and under 200 words unless a deep explanation is genuinely needed. The student is a complete beginner so assume no prior knowledge.`,
+        messages:messages
+      })
+    });
+    const data=await resp.json();
+    typing.remove();
+    if(data.content&&data.content[0]){
+      const reply=data.content[0].text;
+      aiHistory.push({role:'user',content:userMsg});
+      aiHistory.push({role:'assistant',content:reply});
+      if(aiHistory.length>20)aiHistory=aiHistory.slice(-20);
+      addMessage('bot',formatAIText(reply));
+    }else{
+      addMessage('bot','⚠️ Something went wrong. Try again!');
+    }
+  }catch(err){
+    typing.remove();
+    addMessage('bot','⚠️ Could not connect to AI. Check your connection and try again.');
+  }
+}
+
+function addMessage(role,html){
+  const wrap=document.createElement('div');
+  wrap.className='ai-msg ai-msg-'+role;
+  const bubble=document.createElement('div');
+  bubble.className='ai-bubble';
+  bubble.innerHTML=html;
+  wrap.appendChild(bubble);
+  document.getElementById('ai-messages').appendChild(wrap);
+  scrollToBottom();
+}
+
+function scrollToBottom(){
+  const m=document.getElementById('ai-messages');
+  m.scrollTop=m.scrollHeight;
+}
+
+function escHtml(t){
+  return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function formatAIText(text){
+  return escHtml(text)
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/`([^`]+)`/g,'<code>$1</code>')
+    .replace(/\n\n/g,'<br><br>')
+    .replace(/\n/g,'<br>');
+}
+
+// ── Floating trigger button (always visible) ──
+const aiFab=document.createElement('button');
+aiFab.innerHTML='🤖';
+aiFab.title='Ask AI Tutor';
+aiFab.style.cssText=`
+  position:fixed;bottom:24px;right:24px;width:52px;height:52px;
+  border-radius:50%;background:linear-gradient(135deg,#7B6FFF,#4DA6FF);
+  border:none;font-size:22px;cursor:pointer;z-index:9998;
+  box-shadow:0 4px 20px rgba(123,111,255,.5);
+  transition:transform .2s,box-shadow .2s;
+  display:flex;align-items:center;justify-content:center;
+`;
+aiFab.onmouseenter=()=>{aiFab.style.transform='scale(1.1)';aiFab.style.boxShadow='0 6px 28px rgba(123,111,255,.7)';};
+aiFab.onmouseleave=()=>{aiFab.style.transform='scale(1)';aiFab.style.boxShadow='0 4px 20px rgba(123,111,255,.5)';};
+aiFab.onclick=()=>{
+  if(aiPopupVisible){closeAIPanel();}
+  else{openAIPanel();}
+};
+document.body.appendChild(aiFab);
+</script>
+</body>
+</html>
