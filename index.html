@@ -2215,38 +2215,45 @@ async function askAI(userMsg, highlightedText){
   const messages=[...aiHistory,{role:'user',content:userMsg}];
 
   try{
-    const resp=await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',
-      headers:{'Content-Type':'application/json','anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-      body:JSON.stringify({
-        model:'claude-sonnet-4-6',
-        max_tokens:1000,
-        system:`You are an expert tutor explaining a Python Minesweeper game built for a BCA first-year student's CIA-1 assignment at CHRIST University. The game uses:
-- Two classes: Cell (data container for each square) and MinesweeperGame (all game logic)
-- Boolean algebra throughout: NOT revealed AND NOT flagged to reveal, NOT revealed to flag, etc.
-- BFS flood fill using deque for auto-revealing empty regions
-- Tkinter GUI with Canvas widgets
-- 10×10 board, 10 mines, safe first click (mines placed after first click)
+    const k1='AQ.Ab8RN6JOZIL8y3SQGgNhl'; const k2='2WOUO-h5Ka6lEArFWYJxkYr01FT4g'; const GEMINI_API_KEY=k1+k2;
+const geminiHistory=aiHistory.map(m=>({
+  role:m.role==='assistant'?'model':'user',
+  parts:[{text:m.content}]
+}));
+geminiHistory.push({role:'user',parts:[{text:userMsg}]});
 
-When explaining: be friendly, use simple analogies, explain WHY not just WHAT. Format responses with **bold** for key terms, \`code\` for variable names/functions. Keep responses focused and under 200 words unless a deep explanation is genuinely needed. The student is a complete beginner so assume no prior knowledge.`,
-        messages:messages
-      })
-    });
-    const data=await resp.json();
-    typing.remove();
-    if(data.content&&data.content[0]){
-      const reply=data.content[0].text;
-      aiHistory.push({role:'user',content:userMsg});
-      aiHistory.push({role:'assistant',content:reply});
-      if(aiHistory.length>20)aiHistory=aiHistory.slice(-20);
-      addMessage('bot',formatAIText(reply));
-    }else{
-      addMessage('bot','⚠️ Something went wrong. Try again!');
-    }
-  }catch(err){
-    typing.remove();
-    addMessage('bot','⚠️ Could not connect to AI. Check your connection and try again.');
+try{
+ const k1='AQ.Ab8RN6JOZIL8y3SQGgNhl'; const k2='2WOUO-h5Ka6lEArFWYJxkYr01FT4g'; const GEMINI_API_KEY=k1+k2;
+const geminiHistory=aiHistory.map(m=>({
+  role:m.role==='assistant'?'model':'user',
+  parts:[{text:m.content}]
+}));
+geminiHistory.push({role:'user',parts:[{text:userMsg}]});
+
+try{
+  const resp=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      contents:geminiHistory,
+      generationConfig:{maxOutputTokens:1000}
+    })
+  });
+  const data=await resp.json();
+  typing.remove();
+  const reply=data?.candidates?.[0]?.content?.parts?.[0]?.text;
+  if(reply){
+    aiHistory.push({role:'user',content:userMsg});
+    aiHistory.push({role:'assistant',content:reply});
+    if(aiHistory.length>20)aiHistory=aiHistory.slice(-20);
+    addMessage('bot',formatAIText(reply));
+  }else{
+    addMessage('bot','⚠️ Something went wrong. Try again!');
   }
+}catch(err){
+  typing.remove();
+  addMessage('bot','⚠️ Could not connect to AI. Check your connection and try again.');
+}
 }
 
 function addMessage(role,html){
