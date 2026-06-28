@@ -2211,37 +2211,52 @@ async function askAI(userMsg, highlightedText){
   document.getElementById('ai-messages').appendChild(typing);
   scrollToBottom();
 
-  const k1='AQ.Ab8RN6KWZsfVGJrazLXflkVqt78A1Rjc7ZLuh8WMTu'; const k2='5vmftNww'; const GEMINI_API_KEY=k1+k2;
-  const geminiHistory=aiHistory.map(m=>({
-    role:m.role==='assistant'?'model':'user',
-    parts:[{text:m.content}]
-  }));
-  geminiHistory.push({role:'user',parts:[{text:userMsg}]});
+  const k1='gsk_';
+const k2='gsk_ThwzGd27InuX0ZSrNpdoWGdy';
+const k3='b3FYird5VHri7JAJONKwV2lyOzwb';
+const GROQ_API_KEY=k1+k2+k3;
 
-  try{
-    const resp=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        contents:geminiHistory,
-        generationConfig:{maxOutputTokens:1000}
-      })
-    });
-    const data=await resp.json();
-    typing.remove();
-    const reply=data?.candidates?.[0]?.content?.parts?.[0]?.text;
-    if(reply){
-      aiHistory.push({role:'user',content:userMsg});
-      aiHistory.push({role:'assistant',content:reply});
-      if(aiHistory.length>20)aiHistory=aiHistory.slice(-20);
-      addMessage('bot',formatAIText(reply));
-    }else{
-      addMessage('bot','⚠️ Something went wrong. Try again!');
-    }
-  }catch(err){
-    typing.remove();
-    addMessage('bot','⚠️ Could not connect to AI. Check your connection and try again.');
+try{
+  const resp=await fetch('https://api.groq.com/openai/v1/chat/completions',{
+    method:'POST',
+    headers:{
+      'Authorization':'Bearer '+GROQ_API_KEY,
+      'Content-Type':'application/json'
+    },
+    body:JSON.stringify({
+      model:'llama-3.3-70b-versatile',
+      messages:aiHistory.map(m=>({
+        role:m.role==='assistant'?'assistant':'user',
+        content:m.content
+      })).concat({
+        role:'user',
+        content:userMsg
+      }),
+      temperature:0.3,
+      max_tokens:1000
+    })
+  });
+
+  const data=await resp.json();
+
+  typing.remove();
+
+  const reply=data?.choices?.[0]?.message?.content;
+
+  if(reply){
+    aiHistory.push({role:'user',content:userMsg});
+    aiHistory.push({role:'assistant',content:reply});
+    if(aiHistory.length>20)aiHistory=aiHistory.slice(-20);
+    addMessage('bot',formatAIText(reply));
+  }else{
+    addMessage('bot','⚠️ Something went wrong. Try again!');
+    console.log(data);
   }
+
+}catch(err){
+  typing.remove();
+  console.error(err);
+  addMessage('bot','⚠️ Could not connect to AI. Check your connection and try again.');
 }
 
 function addMessage(role,html){
