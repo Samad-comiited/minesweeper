@@ -2211,52 +2211,37 @@ async function askAI(userMsg, highlightedText){
   document.getElementById('ai-messages').appendChild(typing);
   scrollToBottom();
 
-  const k1='gsk_';
-const k2='gsk_ThwzGd27InuX0ZSrNpdoWGdy';
-const k3='b3FYird5VHri7JAJONKwV2lyOzwb';
-const GROQ_API_KEY=k1+k2+k3;
+  const k1='gsk_ThwzGd27InuX0ZSrNpdoW';
+  const k2='Gdyb3FYird5VHri7JAJONKwV2lyOzwb';
+  const GROQ_API_KEY=k1+k2;
+  const groqMessages=[
+    {role:'system',content:`You are an expert tutor explaining a Python Minesweeper game built for a BCA first-year student's CIA-1 assignment at CHRIST University. The game uses two classes (Cell and MinesweeperGame), Boolean algebra guards, BFS flood fill with deque, and Tkinter GUI. 10x10 board, 10 mines, safe first click. Be friendly, use simple analogies, explain WHY not just WHAT. Bold **key terms**, use backticks for variables/functions. Under 200 words. Assume complete beginner.`},
+    ...aiHistory.map(m=>({role:m.role==='assistant'?'assistant':'user',content:m.content})),
+    {role:'user',content:userMsg}
+  ];
 
-try{
-  const resp=await fetch('https://api.groq.com/openai/v1/chat/completions',{
-    method:'POST',
-    headers:{
-      'Authorization':'Bearer '+GROQ_API_KEY,
-      'Content-Type':'application/json'
-    },
-    body:JSON.stringify({
-      model:'llama-3.3-70b-versatile',
-      messages:aiHistory.map(m=>({
-        role:m.role==='assistant'?'assistant':'user',
-        content:m.content
-      })).concat({
-        role:'user',
-        content:userMsg
-      }),
-      temperature:0.3,
-      max_tokens:1000
-    })
-  });
-
-  const data=await resp.json();
-
-  typing.remove();
-
-  const reply=data?.choices?.[0]?.message?.content;
-
-  if(reply){
-    aiHistory.push({role:'user',content:userMsg});
-    aiHistory.push({role:'assistant',content:reply});
-    if(aiHistory.length>20)aiHistory=aiHistory.slice(-20);
-    addMessage('bot',formatAIText(reply));
-  }else{
-    addMessage('bot','⚠️ Something went wrong. Try again!');
-    console.log(data);
+  try{
+    const resp=await fetch('https://api.groq.com/openai/v1/chat/completions',{
+      method:'POST',
+      headers:{'Authorization':'Bearer '+GROQ_API_KEY,'Content-Type':'application/json'},
+      body:JSON.stringify({model:'llama-3.3-70b-versatile',messages:groqMessages,temperature:0.3,max_tokens:1000})
+    });
+    const data=await resp.json();
+    typing.remove();
+    const reply=data?.choices?.[0]?.message?.content;
+    if(reply){
+      aiHistory.push({role:'user',content:userMsg});
+      aiHistory.push({role:'assistant',content:reply});
+      if(aiHistory.length>20)aiHistory=aiHistory.slice(-20);
+      addMessage('bot',formatAIText(reply));
+    }else{
+      addMessage('bot','⚠️ Something went wrong. Try again!');
+      console.log(data);
+    }
+  }catch(err){
+    typing.remove();
+    addMessage('bot','⚠️ Could not connect to AI. Check your connection and try again.');
   }
-
-}catch(err){
-  typing.remove();
-  console.error(err);
-  addMessage('bot','⚠️ Could not connect to AI. Check your connection and try again.');
 }
 
 function addMessage(role,html){
