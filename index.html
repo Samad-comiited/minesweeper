@@ -3,37 +3,70 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Minesweeper — How It Works</title>
+<title>Cat-tastrophe — How It Works</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
 /* ── Reset & Base ── */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#0D0D1F;
-  --surface:#13132B;
-  --surface2:#1A1A38;
-  --surface3:#22224A;
-  --border:#2E2E58;
-  --border2:#3A3A6A;
-  --accent:#7B6FFF;
-  --accent2:#A084FF;
-  --blue:#4DA6FF;
-  --green:#44DD88;
-  --red:#FF5566;
-  --orange:#FF9944;
-  --yellow:#FFD166;
-  --text:#E8E8FF;
-  --text2:#9090C0;
-  --text3:#5C5C90;
-  --cell:#252550;
-  --cell-h:#2E2E5E;
-  --cell-r:#181835;
-  --mine-bg:#3D0F1F;
+  --bg:#F2C14E;
+  --surface:#FBE8B8;
+  --surface2:#F7DA95;
+  --surface3:#F0C96E;
+  --border:#D9A94C;
+  --border2:#C79636;
+  --accent:#6B4226;
+  --accent2:#8B5A2B;
+  --blue:#2E6B8A;
+  --green:#4C6E3F;
+  --red:#B3402C;
+  --orange:#C1622D;
+  --yellow:#8B6914;
+  --text:#3A2617;
+  --text2:#6B4A2E;
+  --text3:#8C6A45;
+  --cell:#EDC876;
+  --cell-h:#E6BC5E;
+  --cell-r:#FFF6DE;
+  --cat-bg:#7A3220;
   --radius:10px;
   --font-body:'Segoe UI',system-ui,sans-serif;
   --font-mono:'Cascadia Code','Fira Code','Consolas',monospace;
 }
 html{scroll-behavior:smooth}
-body{background:var(--bg);color:var(--text);font-family:var(--font-body);line-height:1.6;overflow-x:hidden}
+body{
+  background:var(--bg);
+  color:var(--text);font-family:var(--font-body);line-height:1.6;overflow-x:hidden;
+  position:relative;
+}
+/* Scattered cat motifs (paws + yarn ball + fish) — sparse & irregular, no repeating diamond grid */
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  z-index:-1;
+  opacity:.13;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='168' height='168' viewBox='0 0 168 168'%3E%3Cg fill='%236B4226'%3E%3Cellipse cx='84' cy='106' rx='16' ry='13'/%3E%3Cellipse cx='64' cy='80' rx='7' ry='9' transform='rotate(-18 64 80)'/%3E%3Cellipse cx='82' cy='72' rx='7.5' ry='9.5'/%3E%3Cellipse cx='101' cy='76' rx='7' ry='9' transform='rotate(18 101 76)'/%3E%3Cellipse cx='114' cy='90' rx='6.5' ry='8.5' transform='rotate(35 114 90)'/%3E%3C/g%3E%3C/svg%3E");
+  background-size:168px 168px;
+  background-position:0 0;
+}
+body::after{
+  content:"";
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  z-index:-1;
+  opacity:.11;
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'%3E%3Cg fill='none' stroke='%236B4226' stroke-width='2.5' stroke-linecap='round'%3E%3Ccircle cx='30' cy='32' r='13'/%3E%3Cpath d='M17 24c6 2 20 2 26 0M15 32h30M17 40c6-2 20-2 26 0'/%3E%3Cpath d='M30 19c-4 3-4 22 0 26'/%3E%3C/g%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='50' height='50' viewBox='0 0 50 50'%3E%3Cg fill='%236B4226'%3E%3Cellipse cx='22' cy='25' rx='15' ry='8'/%3E%3Cpath d='M37 25 47 17 47 33Z'/%3E%3Ccircle cx='14' cy='22' r='1.6' fill='%23F2C14E'/%3E%3C/g%3E%3C/svg%3E");
+  background-size:480px 480px, 620px 620px;
+  background-position:70px 40px, 260px 340px;
+  background-repeat:repeat, repeat;
+}
 
 /* ── Scrollbar ── */
 ::-webkit-scrollbar{width:6px}
@@ -42,12 +75,14 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);line-he
 
 /* ── Nav ── */
 nav{position:sticky;top:0;z-index:100;background:rgba(13,13,31,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 2rem}
-.nav-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;gap:2rem;height:54px}
-.nav-logo{font-weight:700;font-size:15px;color:var(--text);display:flex;align-items:center;gap:6px;text-decoration:none}
+.nav-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;gap:2rem;height:60px}
+.nav-logo{font-weight:800;font-size:19px;letter-spacing:.01em;color:#F5E9CE;display:flex;align-items:center;gap:8px;text-decoration:none}
+.nav-logo .nav-logo-emoji{font-size:22px}
+.nav-logo .nav-logo-accent{background:linear-gradient(135deg,#FFD166,#FF9B54);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
 .nav-links{display:flex;gap:4px;margin-left:auto}
-.nav-links a{color:var(--text2);font-size:13px;text-decoration:none;padding:5px 12px;border-radius:6px;transition:all .15s}
-.nav-links a:hover{background:var(--surface2);color:var(--text)}
-.nav-links a.active{background:var(--surface3);color:var(--accent2)}
+.nav-links a{color:rgba(245,233,206,.72);font-size:13px;text-decoration:none;padding:5px 12px;border-radius:6px;transition:all .15s}
+.nav-links a:hover{background:rgba(255,255,255,.08);color:#F5E9CE}
+.nav-links a.active{background:rgba(255,209,102,.16);color:#FFD166}
 
 /* ── Sections ── */
 .section{max-width:1100px;margin:0 auto;padding:80px 2rem}
@@ -58,7 +93,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(13,13,31,.92);backdrop-fil
 
 /* ── Hero ── */
 #hero{min-height:100vh;display:flex;align-items:center;position:relative;overflow:hidden}
-.hero-bg{position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 60% 40%,rgba(123,111,255,.08) 0%,transparent 70%);pointer-events:none}
+.hero-bg{position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 60% 40%,rgba(107,66,38,.08) 0%,transparent 70%);pointer-events:none}
 .hero-grid{display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center;width:100%}
 .hero-badge{display:inline-flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--border2);border-radius:20px;padding:5px 14px;font-size:12px;color:var(--accent2);margin-bottom:20px}
 .hero-title{font-size:clamp(32px,5vw,52px);font-weight:800;line-height:1.1;margin-bottom:16px}
@@ -75,8 +110,8 @@ nav{position:sticky;top:0;z-index:100;background:rgba(13,13,31,.92);backdrop-fil
 .mini-cell{width:44px;height:44px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;cursor:default;transition:all .2s;border:1px solid var(--border)}
 .mc-hidden{background:var(--cell);border-color:var(--border2)}
 .mc-revealed{background:var(--cell-r);border-color:var(--border);color:var(--blue)}
-.mc-mine{background:var(--mine-bg);border-color:#6B1A2A}
-.mc-flag{background:var(--cell);border-color:var(--border2)}
+.mc-cat{background:var(--cat-bg);border-color:#5A2418}
+.mc-collar{background:var(--cell);border-color:var(--border2)}
 .mc-n1{color:#5599FF}.mc-n2{color:#44DD88}.mc-n3{color:#FF6655}.mc-n4{color:#AA66FF}.mc-n5{color:#FFAA44}
 .pulse{animation:pulse 2s ease-in-out infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
@@ -97,11 +132,11 @@ nav{position:sticky;top:0;z-index:100;background:rgba(13,13,31,.92);backdrop-fil
 /* ── Interactive demo ── */
 #demo-board{display:grid;grid-template-columns:repeat(10,46px);gap:3px;margin:0 auto;width:max-content}
 .demo-cell{width:46px;height:46px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:700;cursor:pointer;border:1px solid var(--border2);background:var(--cell);transition:background .12s,transform .08s;user-select:none;position:relative}
-.demo-cell:hover:not(.revealed):not(.mine-exploded){background:var(--cell-h);transform:scale(1.05)}
+.demo-cell:hover:not(.revealed):not(.cat-found){background:var(--cell-h);transform:scale(1.05)}
 .demo-cell.revealed{background:var(--cell-r);border-color:var(--border);cursor:default;transform:none}
-.demo-cell.flagged{background:var(--cell)}
-.demo-cell.mine-exploded{background:var(--mine-bg);border-color:#7B1A2A;animation:shake .3s ease}
-.demo-cell.mine-shown{background:#2A0D18;border-color:#5A1525}
+.demo-cell.collared{background:var(--cell)}
+.demo-cell.cat-found{background:var(--cat-bg);border-color:#5A2418;animation:shake .3s ease}
+.demo-cell.cat-shown{background:#5A2418;border-color:#7A3220}
 @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-3px)}75%{transform:translateX(3px)}}
 @keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.15)}100%{transform:scale(1)}}
 .demo-cell.pop{animation:pop .2s ease}
@@ -112,7 +147,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(13,13,31,.92);backdrop-fil
 
 .demo-hud{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 16px}
 .hud-item{display:flex;align-items:center;gap:6px;font-size:14px;font-weight:600}
-.hud-mine{color:var(--red)}
+.hud-cat{color:var(--red)}
 .hud-timer{color:var(--blue)}
 .hud-status{font-size:12px;color:var(--text2)}
 
@@ -123,7 +158,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(13,13,31,.92);backdrop-fil
 .log-left .log-type{color:var(--blue)}
 .log-right .log-type{color:var(--orange)}
 .log-reveal .log-type{color:var(--green)}
-.log-mine .log-type{color:var(--red)}
+.log-cat .log-type{color:var(--red)}
 .log-win .log-type{color:var(--yellow)}
 .log-bfs .log-type{color:var(--accent2)}
 
@@ -144,7 +179,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(13,13,31,.92);backdrop-fil
 .and .bool-op{background:rgba(77,166,255,.15);color:var(--blue)}
 .or .bool-op{background:rgba(255,153,68,.15);color:var(--orange)}
 .not .bool-op{background:rgba(255,85,102,.15);color:var(--red)}
-.xor .bool-op{background:rgba(123,111,255,.15);color:var(--accent2)}
+.xor .bool-op{background:rgba(107,66,38,.15);color:var(--accent2)}
 .bool-desc{font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.6}
 .truth-table{width:100%;border-collapse:collapse;font-size:11px;font-family:var(--font-mono)}
 .truth-table th{background:var(--surface3);color:var(--text2);padding:5px 8px;text-align:center;border:1px solid var(--border)}
@@ -167,7 +202,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(13,13,31,.92);backdrop-fil
 .toggle-switch input{opacity:0;width:0;height:0}
 .toggle-slider{position:absolute;cursor:pointer;inset:0;background:var(--surface3);border:1px solid var(--border2);border-radius:12px;transition:.2s}
 .toggle-slider:before{content:'';position:absolute;width:18px;height:18px;left:2px;top:2px;background:var(--text3);border-radius:50%;transition:.2s}
-input:checked+.toggle-slider{background:rgba(123,111,255,.3);border-color:var(--accent)}
+input:checked+.toggle-slider{background:rgba(107,66,38,.3);border-color:var(--accent)}
 input:checked+.toggle-slider:before{transform:translateX(20px);background:var(--accent)}
 .bool-result{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 16px;font-family:var(--font-mono);font-size:13px;margin-top:16px}
 .bool-result .result-label{color:var(--text3);font-size:11px;margin-bottom:4px}
@@ -186,12 +221,12 @@ input:checked+.toggle-slider:before{transform:translateX(20px);background:var(--
 .code-filename{font-size:12px;color:var(--text2);font-family:var(--font-mono);margin-left:4px}
 .code-body{padding:0;overflow-x:auto}
 pre{padding:20px;font-family:var(--font-mono);font-size:13px;line-height:1.8;white-space:pre;tab-size:4;color:var(--text)}
-.kw{color:#CC99FF}.fn{color:#5DADE2}.cls{color:#F9C74F}.cm{color:#5C5C90;font-style:italic}.str{color:#A8D8A8}.num{color:#F4A261}.var{color:#C0E0FF}.op{color:#FF9944}.dec{color:#C0C0FF}
+.kw{color:#8B4513}.fn{color:#2E6B8A}.cls{color:#B8860B}.cm{color:#9C8768;font-style:italic}.str{color:#3D7A3D}.num{color:#C1622D}.var{color:#5A6B4A}.op{color:#A0442E}.dec{color:#8B4513}
 
 /* Annotated code */
 .annotated-line{display:flex;gap:12px;position:relative;padding:2px 20px;cursor:pointer;transition:background .1s}
-.annotated-line:hover{background:rgba(123,111,255,.06)}
-.annotated-line.highlight{background:rgba(123,111,255,.12);border-left:2px solid var(--accent)}
+.annotated-line:hover{background:rgba(107,66,38,.06)}
+.annotated-line.highlight{background:rgba(107,66,38,.12);border-left:2px solid var(--accent)}
 .line-num{color:var(--text3);font-size:12px;min-width:28px;text-align:right;user-select:none;flex-shrink:0}
 .line-code{font-size:13px;white-space:pre;flex:1}
 .line-annotation{display:none;font-size:12px;color:var(--yellow);background:rgba(255,209,102,.08);border:1px solid rgba(255,209,102,.2);border-radius:6px;padding:6px 10px;margin:4px 20px 8px 60px;line-height:1.5}
@@ -202,7 +237,7 @@ pre{padding:20px;font-family:var(--font-mono);font-size:13px;line-height:1.8;whi
 .flow-wrap{margin-top:28px;overflow-x:auto}
 .flow{display:flex;flex-direction:column;align-items:center;gap:0;min-width:360px}
 .flow-node{background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:12px 20px;text-align:center;font-size:13px;min-width:200px;position:relative}
-.flow-node.decision{background:rgba(123,111,255,.08);border-color:var(--accent);color:var(--text);clip-path:polygon(50% 0%,100% 50%,50% 100%,0% 50%);padding:20px 40px}
+.flow-node.decision{background:rgba(107,66,38,.08);border-color:var(--accent);color:var(--text);clip-path:polygon(50% 0%,100% 50%,50% 100%,0% 50%);padding:20px 40px}
 .flow-node.start{background:rgba(68,221,136,.08);border-color:var(--green);color:var(--green);border-radius:24px}
 .flow-node.end-win{background:rgba(68,221,136,.08);border-color:var(--green);color:var(--green);border-radius:24px}
 .flow-node.end-lose{background:rgba(255,85,102,.08);border-color:var(--red);color:var(--red);border-radius:24px}
@@ -218,7 +253,7 @@ pre{padding:20px;font-family:var(--font-mono);font-size:13px;line-height:1.8;whi
 .bfs-grid{display:grid;grid-template-columns:repeat(8,38px);gap:2px;margin:16px 0}
 .bfs-cell{width:38px;height:38px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;border:1px solid var(--border);background:var(--cell);transition:all .3s;cursor:default}
 .bfs-cell.bfs-empty{background:var(--cell-r);border-color:var(--border);color:transparent}
-.bfs-cell.bfs-queued{background:rgba(123,111,255,.25);border-color:var(--accent);color:var(--accent2)}
+.bfs-cell.bfs-queued{background:rgba(107,66,38,.25);border-color:var(--accent);color:var(--accent2)}
 .bfs-cell.bfs-visited{background:var(--cell-r);border-color:var(--border)}
 .bfs-cell.bfs-number{background:var(--cell-r);border-color:var(--border)}
 .bfs-cell.bfs-wall{background:var(--cell);border-color:var(--border2)}
@@ -226,7 +261,7 @@ pre{padding:20px;font-family:var(--font-mono);font-size:13px;line-height:1.8;whi
 .bfs-controls{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap}
 .bfs-btn{background:var(--surface2);border:1px solid var(--border2);color:var(--text2);padding:7px 14px;border-radius:7px;font-size:12px;cursor:pointer;transition:all .15s}
 .bfs-btn:hover{background:var(--surface3);color:var(--text)}
-.bfs-btn.primary-btn{background:rgba(123,111,255,.2);border-color:var(--accent);color:var(--accent2)}
+.bfs-btn.primary-btn{background:rgba(107,66,38,.2);border-color:var(--accent);color:var(--accent2)}
 .bfs-step-info{font-size:12px;color:var(--text2);background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-bottom:12px;font-family:var(--font-mono);min-height:44px}
 
 /* ── Variables explorer ── */
@@ -240,7 +275,7 @@ pre{padding:20px;font-family:var(--font-mono);font-size:13px;line-height:1.8;whi
 .type-int{background:rgba(77,166,255,.15);color:var(--blue)}
 .type-list{background:rgba(255,153,68,.15);color:var(--orange)}
 .type-str{background:rgba(249,199,79,.15);color:var(--yellow)}
-.type-float{background:rgba(123,111,255,.15);color:var(--accent2)}
+.type-float{background:rgba(107,66,38,.15);color:var(--accent2)}
 .var-live{font-family:var(--font-mono);font-size:12px;color:var(--yellow);background:rgba(255,209,102,.08);border:1px solid rgba(255,209,102,.15);border-radius:4px;padding:2px 7px;display:inline-block}
 
 /* ── Progress / quiz ── */
@@ -248,7 +283,7 @@ pre{padding:20px;font-family:var(--font-mono);font-size:13px;line-height:1.8;whi
 .quiz-q{font-size:14px;font-weight:500;margin-bottom:14px}
 .quiz-opts{display:flex;flex-direction:column;gap:8px}
 .quiz-opt{background:var(--surface);color: var(--text);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:13px;cursor:pointer;transition:all .15s;text-align:left}
-.quiz-opt:hover{border-color:var(--accent);background:rgba(123,111,255,.06)}
+.quiz-opt:hover{border-color:var(--accent);background:rgba(107,66,38,.06)}
 .quiz-opt.correct{border-color:var(--green);background:rgba(68,221,136,.08);color:var(--green)}
 .quiz-opt.wrong{border-color:var(--red);background:rgba(255,85,102,.08);color:var(--red)}
 .quiz-feedback{font-size:12px;margin-top:12px;padding:10px 14px;border-radius:8px;line-height:1.6;display:none}
@@ -260,7 +295,7 @@ pre{padding:20px;font-family:var(--font-mono);font-size:13px;line-height:1.8;whi
 /* ── Chip tags ── */
 .chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
 .chip{font-size:11px;padding:4px 10px;border-radius:20px;font-weight:500}
-.chip-purple{background:rgba(123,111,255,.15);color:var(--accent2);border:1px solid rgba(123,111,255,.3)}
+.chip-purple{background:rgba(107,66,38,.15);color:var(--accent2);border:1px solid rgba(107,66,38,.3)}
 .chip-blue{background:rgba(77,166,255,.15);color:var(--blue);border:1px solid rgba(77,166,255,.3)}
 .chip-green{background:rgba(68,221,136,.15);color:var(--green);border:1px solid rgba(68,221,136,.3)}
 .chip-orange{background:rgba(255,153,68,.15);color:var(--orange);border:1px solid rgba(255,153,68,.3)}
@@ -312,7 +347,7 @@ pre{padding:20px;font-family:var(--font-mono);font-size:13px;line-height:1.8;whi
 <!-- ── NAV ── -->
 <nav>
   <div class="nav-inner">
-    <a class="nav-logo" href="#">💣 Minesweeper Guide</a>
+    <a class="nav-logo" href="#"><span class="nav-logo-emoji">🐱</span><span class="nav-logo-accent">Cat-tastrophe</span>&nbsp;Guide</a>
     <div class="nav-links">
       <a href="#" onclick="event.preventDefault();document.getElementById('what').scrollIntoView({behavior:'smooth'})">What is it</a>
       <a href="#" onclick="event.preventDefault();document.getElementById('demo').scrollIntoView({behavior:'smooth'})">Play it</a>
@@ -330,8 +365,8 @@ pre{padding:20px;font-family:var(--font-mono);font-size:13px;line-height:1.8;whi
   <div class="section" style="padding-top:0;padding-bottom:0;width:100%">
   <div class="hero-grid">
     <div>
-      <div class="hero-badge">💣 CIA-1 · Boolean Algebra Project --By Samad et al.</div>
-      <h1 class="hero-title">How does <span>Minesweeper</span> actually work?</h1>
+      <div class="hero-badge">🐱 CIA-1 · Boolean Algebra Project</div>
+      <h1 class="hero-title">How does <span>Cat-tastrophe</span> actually work?</h1>
       <p class="hero-desc">A complete visual explainer — from what happens when you click a square, to how Boolean algebra controls every single decision in the game.</p>
         <button class="btn-primary" onclick="document.getElementById('demo').scrollIntoView({behavior:'smooth'})">▶ Play the demo</button>
         <button class="btn-secondary" onclick="document.getElementById('what').scrollIntoView({behavior:'smooth'})">Start from scratch</button>
@@ -355,42 +390,42 @@ pre{padding:20px;font-family:var(--font-mono);font-size:13px;line-height:1.8;whi
 
 <hr class="divider">
 
-<!-- ── WHAT IS MINESWEEPER ── -->
+<!-- ── WHAT IS CAT-TASTROPHE ── -->
 <section id="what" class="section">
   <div class="section-label">Starting from zero</div>
-  <h2 class="section-title">What is Minesweeper?</h2>
-  <p class="section-sub">Minesweeper is a puzzle game where mines are hidden under a grid of squares. Your job: reveal every safe square without clicking a mine.</p>
+  <h2 class="section-title">What is Cat-tastrophe?</h2>
+  <p class="section-sub">Cat-tastrophe is a puzzle game where cats are hidden under a grid of squares. Your job: reveal every safe square without clicking a cat.</p>
 
   <div class="card-grid" style="margin-top:32px">
     <div class="card">
       <div class="card-icon">🖱️</div>
       <h3>Left-click → Reveal</h3>
-      <p>Clicking a square opens it. If it's a mine — game over. If it's safe, it shows how many mines are in the 8 surrounding squares (0–8). A 0 means no mines nearby, so the game auto-opens all neighbours too.</p>
+      <p>Clicking a square opens it. If it's a cat — game over. If it's safe, it shows how many cats are in the 8 surrounding squares (0–8). A 0 means no cats nearby, so the game auto-opens all neighbours too.</p>
     </div>
     <div class="card">
-      <div class="card-icon">🚩</div>
-      <h3>Right-click → Flag</h3>
-      <p>Right-clicking plants a flag on a square you think is a mine. Flagged squares can't be opened by accident. Right-clicking again removes the flag. The mine counter updates to show remaining mines.</p>
+      <div class="card-icon"><svg viewBox="0 0 24 24" width="1em" height="1em" style="vertical-align:-3px" xmlns="http://www.w3.org/2000/svg"><path d="M3 9c0-3.5 4-6 9-6s9 2.5 9 6" fill="none" stroke="#8B5A2B" stroke-width="2.2" stroke-linecap="round"/><circle cx="4.5" cy="9.6" r="1.15" fill="#6B4226"/><circle cx="9.5" cy="11.4" r="1.15" fill="#6B4226"/><circle cx="14.5" cy="11.4" r="1.15" fill="#6B4226"/><circle cx="19.5" cy="9.6" r="1.15" fill="#6B4226"/><circle cx="12" cy="16.3" r="3" fill="#F2C14E" stroke="#C1622D" stroke-width="1.3"/></svg></div>
+      <h3>Right-click → Collar</h3>
+      <p>Right-clicking plants a collar on a square you think is a cat. Collared squares can't be opened by accident. Right-clicking again removes the collar. The cat counter updates to show remaining cats.</p>
     </div>
     <div class="card">
       <div class="card-icon">🏆</div>
       <h3>How you win</h3>
-      <p>Reveal every single safe square. You don't need to flag all the mines — you just need to open every cell that isn't a mine. When the last safe cell opens, you win instantly.</p>
+      <p>Reveal every single safe square. You don't need to collar all the cats — you just need to open every cell that isn't a cat. When the last safe cell opens, you win instantly.</p>
     </div>
     <div class="card">
-      <div class="card-icon">💣</div>
+      <div class="card-icon">🐱</div>
       <h3>First click is always safe</h3>
-      <p>Mines are placed <em>after</em> your first click. The code keeps a "safe zone" — the cell you clicked plus its 8 neighbours — and never puts a mine in that zone. So your very first click always opens a nice big area.</p>
+      <p>Cats are placed <em>after</em> your first click. The code keeps a "safe zone" — the cell you clicked plus its 8 neighbours — and never puts a cat in that zone. So your very first click always opens a nice big area.</p>
     </div>
     <div class="card">
       <div class="card-icon">🔢</div>
       <h3>What the numbers mean</h3>
-      <p>A revealed square shows a number 1–8. That number tells you exactly how many of the 8 squares touching it contain mines. Use this to logically deduce which squares are safe to click.</p>
+      <p>A revealed square shows a number 1–8. That number tells you exactly how many of the 8 squares touching it contain cats. Use this to logically deduce which squares are safe to click.</p>
     </div>
     <div class="card">
       <div class="card-icon">⚡</div>
       <h3>The flood fill shortcut</h3>
-      <p>When you reveal an empty square (shows nothing, no mines nearby), the game automatically opens all connected empty squares — sometimes revealing a huge area at once. This uses a BFS algorithm.</p>
+      <p>When you reveal an empty square (shows nothing, no cats nearby), the game automatically opens all connected empty squares — sometimes revealing a huge area at once. This uses a BFS algorithm.</p>
     </div>
   </div>
 </section>
@@ -406,7 +441,7 @@ pre{padding:20px;font-family:var(--font-mono);font-size:13px;line-height:1.8;whi
   <div style="margin-top:32px" class="demo-wrap">
     <div class="demo-panel">
       <div class="demo-hud">
-        <div class="hud-item hud-mine">💣 <span id="d-mines">10</span></div>
+        <div class="hud-item hud-cat">🐱 <span id="d-cats">10</span></div>
         <div class="hud-status" id="d-status">Click any square to start</div>
         <div class="hud-item hud-timer">⏱ <span id="d-timer">0s</span></div>
       </div>
@@ -422,9 +457,9 @@ pre{padding:20px;font-family:var(--font-mono);font-size:13px;line-height:1.8;whi
         <div class="legend-row"><div class="legend-cell" style="background:var(--cell)"></div>Hidden — not yet revealed</div>
         <div class="legend-row"><div class="legend-cell" style="background:var(--cell-h)"></div>Hovered — about to click</div>
         <div class="legend-row"><div class="legend-cell" style="background:var(--cell-r)"></div>Revealed — safe, opened</div>
-        <div class="legend-row"><div class="legend-cell" style="background:var(--cell)">🚩</div>Flagged — marked as mine</div>
-        <div class="legend-row"><div class="legend-cell" style="background:var(--mine-bg)">💣</div>Mine — game over!</div>
-        <div class="legend-row"><div class="legend-cell" style="background:var(--cell-r);color:var(--blue);font-weight:700;font-size:11px">1</div>Number — adjacent mines</div>
+        <div class="legend-row"><div class="legend-cell" style="background:var(--cell)"><svg viewBox="0 0 24 24" width="14" height="14" xmlns="http://www.w3.org/2000/svg"><path d="M3 9c0-3.5 4-6 9-6s9 2.5 9 6" fill="none" stroke="#8B5A2B" stroke-width="2.2" stroke-linecap="round"/><circle cx="4.5" cy="9.6" r="1.15" fill="#6B4226"/><circle cx="9.5" cy="11.4" r="1.15" fill="#6B4226"/><circle cx="14.5" cy="11.4" r="1.15" fill="#6B4226"/><circle cx="19.5" cy="9.6" r="1.15" fill="#6B4226"/><circle cx="12" cy="16.3" r="3" fill="#F2C14E" stroke="#C1622D" stroke-width="1.3"/></svg></div>Collared — marked as cat</div>
+        <div class="legend-row"><div class="legend-cell" style="background:var(--cat-bg)">🐱</div>Cat — game over!</div>
+        <div class="legend-row"><div class="legend-cell" style="background:var(--cell-r);color:var(--blue);font-weight:700;font-size:11px">1</div>Number — adjacent cats</div>
       </div>
       <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:6px">Event log <span style="font-size:10px;color:var(--text3);font-weight:400">(what the code is doing)</span></div>
       <div class="event-log" id="event-log">
@@ -440,14 +475,14 @@ pre{padding:20px;font-family:var(--font-mono);font-size:13px;line-height:1.8;whi
 <section id="code" class="section">
   <div class="section-label">Under the hood</div>
   <h2 class="section-title">How the code is structured</h2>
-  <p class="section-sub">The game is split into two classes and about 19 functions. Click any highlighted line to see what it does.</p>
+  <p class="section-sub">The game is split into two classes and 16 functions. Click any highlighted line to see what it does.</p>
 
   <div class="tab-bar" id="code-tab-bar" style="margin-top:32px">
     <button class="tab-btn active" onclick="switchTab(this,'tab-classes')">Classes</button>
     <button class="tab-btn" onclick="switchTab(this,'tab-vars')">Variables</button>
     <button class="tab-btn" onclick="switchTab(this,'tab-funcs')">Functions</button>
     <button class="tab-btn" onclick="switchTab(this,'tab-flow')">Game flow</button>
-    <button class="tab-btn tab-btn-src" onclick="switchTab(this,'tab-source-inline')" style="margin-left:auto;color:var(--accent2);border:1px solid rgba(123,111,255,.3);background:rgba(123,111,255,.08)">{ } Source Code</button>
+    <button class="tab-btn tab-btn-src" onclick="switchTab(this,'tab-source-inline')" style="margin-left:auto;color:var(--accent2);border:1px solid rgba(107,66,38,.3);background:rgba(107,66,38,.08)">{ } Source Code</button>
   </div>
 
   <!-- CLASSES TAB -->
@@ -463,34 +498,33 @@ pre{padding:20px;font-family:var(--font-mono);font-size:13px;line-height:1.8;whi
         </div>
         <p style="font-size:13px;color:var(--text2);line-height:1.65;margin-bottom:12px">A <strong>class</strong> is a template. <code style="font-size:11px;color:var(--accent2)">Cell</code> is a template for one board square. The game creates 100 copies — one per square. Each copy is called an <strong>instance</strong> and stores its own data.</p>
         <div class="tl-code">class Cell:
-    is_mine         = False  # mine hiding here?
+    is_cat         = False  # cat hiding here?
     is_revealed     = False  # has player opened it?
-    is_flagged      = False  # player put a flag here?
-    neighbour_count = 0      # how many mines nearby?
-    canvas          = None   # the button widget</div>
+    is_collared      = False  # player put a collar here?
+    neighbour_count = 0      # how many cats nearby?
+    button          = None   # the button widget</div>
         <div class="callout callout-info" style="margin-top:12px"><span class="callout-icon">💡</span><span>No logic here — Cell only stores facts. Think of it as a sticky note attached to each square.</span></div>
       </div>
       <div class="card" style="border-color:var(--blue)">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
           <span style="font-size:22px">🎮</span>
           <div>
-            <div style="font-family:var(--font-mono);font-size:14px;color:var(--blue);font-weight:600">class MinesweeperGame</div>
+            <div style="font-family:var(--font-mono);font-size:14px;color:var(--blue);font-weight:600">class CatstropheGame</div>
             <div style="font-size:11px;color:var(--text3)">Brain of the game · 1 instance</div>
           </div>
         </div>
-        <p style="font-size:13px;color:var(--text2);line-height:1.65;margin-bottom:12px">This class does everything: draws the window, handles clicks, places mines, runs the timer, and decides if you've won or lost. Only one instance is ever created — <code style="font-size:11px;color:var(--accent2)">game = MinesweeperGame()</code>.</p>
-        <div class="tl-code">class MinesweeperGame:
+        <p style="font-size:13px;color:var(--text2);line-height:1.65;margin-bottom:12px">This class does everything: draws the window, handles clicks, places cats, runs the timer, and decides if you've won or lost. Only one instance is ever created — <code style="font-size:11px;color:var(--accent2)">game = CatstropheGame()</code>.</p>
+        <div class="tl-code">class CatstropheGame:
     board      = []     # 10×10 grid of Cell objects
     game_over  = False  # are clicks disabled?
     first_click= True   # has first click happened?
     start_time = None   # when did the game start?
-    leaderboard= []     # top 10 times
-    # ... + 19 methods</div>
-        <div class="callout callout-tip" style="margin-top:12px"><span class="callout-icon">✅</span><span>All logic lives here. When you click a button, MinesweeperGame decides what to do with it.</span></div>
+    # ... + 15 methods</div>
+        <div class="callout callout-tip" style="margin-top:12px"><span class="callout-icon">✅</span><span>All logic lives here. When you click a button, CatstropheGame decides what to do with it.</span></div>
       </div>
     </div>
 
-    <div class="callout callout-info" style="margin-top:20px"><span class="callout-icon">🔗</span><span><strong>How they connect:</strong> MinesweeperGame creates 100 Cell objects and stores them in <code style="font-size:11px">self.board[row][col]</code>. To check if square (3,4) is a mine: <code style="font-size:11px">self.board[3][4].is_mine</code>. That's it — read the Cell's variable.</span></div>
+    <div class="callout callout-info" style="margin-top:20px"><span class="callout-icon">🔗</span><span><strong>How they connect:</strong> CatstropheGame creates 100 Cell objects and stores them in <code style="font-size:11px">self.board[row][col]</code>. To check if square (3,4) is a cat: <code style="font-size:11px">self.board[3][4].is_cat</code>. That's it — read the Cell's variable.</span></div>
   </div>
 
   <!-- VARS TAB -->
@@ -499,25 +533,24 @@ pre{padding:20px;font-family:var(--font-mono);font-size:13px;line-height:1.8;whi
     <p style="font-size:13px;color:var(--text2);margin-bottom:12px">Every Cell instance has these 5 variables. Each of the 100 cells has its own copy.</p>
     <table class="var-table">
       <tr><th>Variable</th><th>Type</th><th>What it stores</th><th>Changes when</th></tr>
-      <tr><td><span class="var-name">is_mine</span></td><td><span class="var-type type-bool">bool</span></td><td>True if a mine is hidden in this square</td><td>place_mines() runs after first click</td></tr>
+      <tr><td><span class="var-name">is_cat</span></td><td><span class="var-type type-bool">bool</span></td><td>True if a cat is hidden in this square</td><td>place_cats() runs after first click</td></tr>
       <tr><td><span class="var-name">is_revealed</span></td><td><span class="var-type type-bool">bool</span></td><td>True once the player opens this square</td><td>reveal_cell() or flood_fill() runs</td></tr>
-      <tr><td><span class="var-name">is_flagged</span></td><td><span class="var-type type-bool">bool</span></td><td>True when player right-clicks to flag it</td><td>toggle_flag() runs</td></tr>
-      <tr><td><span class="var-name">neighbour_count</span></td><td><span class="var-type type-int">int</span></td><td>0–8: how many of the 8 surrounding squares are mines</td><td>calculate_neighbour_numbers() after mines placed</td></tr>
-      <tr><td><span class="var-name">canvas</span></td><td><span class="var-type type-str">Widget</span></td><td>The actual drawn button on screen</td><td>_build_board() on startup</td></tr>
+      <tr><td><span class="var-name">is_collared</span></td><td><span class="var-type type-bool">bool</span></td><td>True when player right-clicks to collar it</td><td>toggle_collar() runs</td></tr>
+      <tr><td><span class="var-name">neighbour_count</span></td><td><span class="var-type type-int">int</span></td><td>0–8: how many of the 8 surrounding squares are cats</td><td>calculate_numbers() after cats placed</td></tr>
+      <tr><td><span class="var-name">button</span></td><td><span class="var-type type-str">Widget</span></td><td>The actual drawn button on screen</td><td>_build_board() on startup</td></tr>
     </table>
 
-    <h3 style="font-size:14px;font-weight:600;margin:24px 0 4px;color:var(--text)">MinesweeperGame variables (state)</h3>
+    <h3 style="font-size:14px;font-weight:600;margin:24px 0 4px;color:var(--text)">CatstropheGame variables (state)</h3>
     <p style="font-size:13px;color:var(--text2);margin-bottom:12px">These track the game's "memory" — what's currently happening.</p>
     <table class="var-table">
       <tr><th>Variable</th><th>Type</th><th>Starts as</th><th>Meaning</th></tr>
       <tr><td><span class="var-name">self.board</span></td><td><span class="var-type type-list">list[list]</span></td><td><code>[]</code></td><td>2D grid: board[row][col] gives you a Cell object</td></tr>
-      <tr><td><span class="var-name">self.first_click</span></td><td><span class="var-type type-bool">bool</span></td><td><code>True</code></td><td>True until first click — delays mine placement for safe start</td></tr>
+      <tr><td><span class="var-name">self.first_click</span></td><td><span class="var-type type-bool">bool</span></td><td><code>True</code></td><td>True until first click — delays cat placement for safe start</td></tr>
       <tr><td><span class="var-name">self.game_over</span></td><td><span class="var-type type-bool">bool</span></td><td><code>False</code></td><td>Becomes True when you win or lose — disables all clicks</td></tr>
-      <tr><td><span class="var-name">self.game_won</span></td><td><span class="var-type type-bool">bool</span></td><td><code>False</code></td><td>True only on win — distinguishes win vs loss</td></tr>
       <tr><td><span class="var-name">self.start_time</span></td><td><span class="var-type type-float">float</span></td><td><code>None</code></td><td>Unix timestamp of first click. time.time() − start_time = elapsed seconds</td></tr>
-      <tr><td><span class="var-name">self.leaderboard</span></td><td><span class="var-type type-list">list</span></td><td><code>[]</code></td><td>List of (name, time) tuples, sorted by fastest, max 10</td></tr>
-      <tr><td><span class="var-name">self.timer_var</span></td><td><span class="var-type type-str">StringVar</span></td><td><code>"0s"</code></td><td>Special tkinter variable — changing it auto-updates the timer label on screen</td></tr>
-      <tr><td><span class="var-name">self.mine_var</span></td><td><span class="var-type type-str">StringVar</span></td><td><code>"10"</code></td><td>Remaining mines counter displayed on screen</td></tr>
+      <tr><td><span class="var-name">self.cat_label</span></td><td><span class="var-type type-str">Label</span></td><td><code>"🐱 10"</code></td><td>Remaining cats display — updated via .config(text=...) as collars are placed</td></tr>
+      <tr><td><span class="var-name">self.timer_label</span></td><td><span class="var-type type-str">Label</span></td><td><code>"⏱ 0s"</code></td><td>Elapsed-time display — updated via .config(text=...) every tick</td></tr>
+      <tr><td><span class="var-name">self.status_label</span></td><td><span class="var-type type-str">Label</span></td><td><code>"Left-click: reveal | Right-click: collar"</code></td><td>Shows instructions, then win/loss messages</td></tr>
     </table>
   </div>
 
@@ -528,37 +561,37 @@ pre{padding:20px;font-family:var(--font-mono);font-size:13px;line-height:1.8;whi
       <div class="tl-item">
         <div class="tl-dot" style="border-color:var(--green)"></div>
         <div class="tl-title">__init__() <span style="font-size:11px;font-weight:400;color:var(--text3)">— runs once on startup</span></div>
-        <div class="tl-body">The constructor. Runs automatically when you do <code style="font-size:11px;color:var(--accent2)">game = MinesweeperGame()</code>. Creates the window, sets all variables to their starting values, then calls every setup function.</div>
-        <div class="tl-code">self.first_click = True   # no mines placed yet
+        <div class="tl-body">The constructor. Runs automatically when you do <code style="font-size:11px;color:var(--accent2)">game = CatstropheGame()</code>. Creates the window, sets all variables to their starting values, then calls every setup function.</div>
+        <div class="tl-code">self.first_click = True   # no cats placed yet
 self.game_over   = False  # clicks are enabled
 self.board       = []     # empty — filled by _build_board()
-self._build_interface()   # draw the window
-self._build_board()       # create 100 Cell objects
-self.connect_buttons()    # link clicks to functions
-self.update_timer()       # start ticking</div>
+self._build_ui()          # draw title, labels, New Game button
+self._build_board()       # create 100 Cell objects + buttons</div>
       </div>
 
       <div class="tl-item">
         <div class="tl-dot" style="border-color:var(--blue)"></div>
         <div class="tl-title">_build_board() <span style="font-size:11px;font-weight:400;color:var(--text3)">— creates the grid</span></div>
-        <div class="tl-body">Uses two nested for loops (row 0→9, col 0→9) to create 100 Cell objects. Each Cell gets a Canvas widget (the visual square) and is stored in the 2D list <code style="font-size:11px;color:var(--accent2)">self.board</code>.</div>
+        <div class="tl-body">Uses two nested for loops (row 0→9, col 0→9) to create 100 Cell objects. Each Cell gets a Button widget (the clickable square), and its left/right-click handlers are wired up right here — no separate "connect" step needed.</div>
         <div class="tl-code">for row in range(10):        # 0,1,2...9
     for col in range(10):    # 0,1,2...9
-        cell = Cell()            # make a new cell
-        cell.canvas = Canvas(...)# attach a visual square
+        cell = Cell()               # make a new cell
+        cell.button = Button(...)   # attach a clickable button
+        btn.configure(command=lambda r=row,c=col: self.left_click(r,c))
+        btn.bind("&lt;Button-3&gt;", lambda e,r=row,c=col: self.right_click(r,c))
         self.board[row][col] = cell</div>
       </div>
 
       <div class="tl-item">
         <div class="tl-dot" style="border-color:var(--orange)"></div>
-        <div class="tl-title">place_mines(first_row, first_col) <span style="font-size:11px;font-weight:400;color:var(--text3)">— called on first click</span></div>
-        <div class="tl-body">Randomly places 10 mines, but never in the "safe zone" (first-clicked cell + its 8 neighbours). Uses a while loop that keeps picking random positions until 10 valid ones are found. <strong>Boolean rule:</strong> place mine only if NOT safe AND NOT already a mine.</div>
+        <div class="tl-title">place_cats(first_row, first_col) <span style="font-size:11px;font-weight:400;color:var(--text3)">— called on first click</span></div>
+        <div class="tl-body">Randomly places 10 cats, but never in the "safe zone" (first-clicked cell + its 8 neighbours). Uses a while loop that keeps picking random positions until 10 valid ones are found. <strong>Boolean rule:</strong> place cat only if NOT safe AND NOT already a cat.</div>
         <div class="tl-code">safe = {(first_row, first_col)}   # first click is safe
 safe += get_neighbours(first_row, first_col)  # so are neighbours
 while placed &lt; 10:
     r, c = random.randint(0,9), random.randint(0,9)
-    if (r,c) not in safe and NOT board[r][c].is_mine:
-        board[r][c].is_mine = True
+    if (r,c) not in safe and NOT board[r][c].is_cat:
+        board[r][c].is_cat = True
         placed += 1</div>
       </div>
 
@@ -576,14 +609,14 @@ while placed &lt; 10:
       <div class="tl-item">
         <div class="tl-dot" style="border-color:var(--red)"></div>
         <div class="tl-title">reveal_cell(row, col) <span style="font-size:11px;font-weight:400;color:var(--text3)">— the most important function</span></div>
-        <div class="tl-body">Called every time you left-click. Applies boolean checks, handles first click, mine hits, flood fill, and win check. This is the heart of the game.</div>
-        <div class="tl-code">if cell.is_revealed OR cell.is_flagged: return  # Boolean guard
+        <div class="tl-body">Called every time you left-click. Applies boolean checks, handles first click, cat hits, flood fill, and win check. This is the heart of the game.</div>
+        <div class="tl-code">if cell.is_revealed OR cell.is_collared: return  # Boolean guard
 if first_click:
-    place_mines(row, col)   # safe zone around this click
+    place_cats(row, col)   # safe zone around this click
     start_time = time.time()
 cell.is_revealed = True
-if cell.is_mine:    # hit a mine!
-    game_over = True; reveal_all_mines()
+if cell.is_cat:    # hit a cat!
+    game_over = True; show_all_cats()
 elif cell.neighbour_count == 0:
     flood_fill(row, col)    # auto-open neighbours
 check_win()</div>
@@ -597,8 +630,8 @@ check_win()</div>
 while queue:
     row, col = queue.popleft()   # take next square
     for nr, nc in get_neighbours(row, col):
-        # Boolean: only expand if NOT revealed AND NOT flagged AND NOT mine
-        if not revealed and not flagged and not mine:
+        # Boolean: only expand if NOT revealed AND NOT collared AND NOT cat
+        if not revealed and not collared and not cat:
             cell.is_revealed = True
             if cell.neighbour_count == 0:
                 queue.append((nr, nc))  # keep going!</div>
@@ -607,20 +640,20 @@ while queue:
       <div class="tl-item">
         <div class="tl-dot" style="border-color:var(--yellow)"></div>
         <div class="tl-title">check_win() <span style="font-size:11px;font-weight:400;color:var(--text3)">— called after every reveal</span></div>
-        <div class="tl-body">Counts all cells where is_mine=False AND is_revealed=True. If that count equals total safe squares (90), every safe cell is open — you win!</div>
+        <div class="tl-body">Counts all cells where is_cat=False AND is_revealed=True. If that count equals total safe squares (90), every safe cell is open — you win!</div>
         <div class="tl-code">total_safe    = 100 - 10  # = 90 safe squares
-revealed_safe = count where NOT is_mine AND is_revealed
+revealed_safe = count where NOT is_cat AND is_revealed
 if revealed_safe == total_safe:
-    game_over = True; game_won = True</div>
+    game_over = True   # board cleared — show win message</div>
       </div>
 
       <div class="tl-item">
         <div class="tl-dot" style="border-color:var(--orange)"></div>
-        <div class="tl-title">toggle_flag(row, col) <span style="font-size:11px;font-weight:400;color:var(--text3)">— right-click handler</span></div>
-        <div class="tl-body">Flips is_flagged between True/False. Boolean rule: only works if NOT revealed. Updates the mine counter label on screen.</div>
-        <div class="tl-code">if cell.is_revealed: return  # can't flag an open square
-cell.is_flagged = NOT cell.is_flagged  # flip True↔False
-mine_counter = TOTAL_MINES - count_of_flags</div>
+        <div class="tl-title">toggle_collar(row, col) <span style="font-size:11px;font-weight:400;color:var(--text3)">— right-click handler</span></div>
+        <div class="tl-body">Flips is_collared between True/False. Boolean rule: only works if NOT revealed. Updates the cat counter label on screen.</div>
+        <div class="tl-code">if cell.is_revealed: return  # can't collar an open square
+cell.is_collared = NOT cell.is_collared  # flip True↔False
+cat_counter = TOTAL_CATS - count_of_collars</div>
       </div>
 
       <div class="tl-item">
@@ -656,15 +689,15 @@ if NOT game_over:
           <div class="flow-arrow"><div class="flow-arrow-line"></div><span style="font-size:11px;color:var(--green);margin-left:4px">Yes →</span></div>
           <div class="flow-node action">reveal_cell(row, col)</div>
           <div class="flow-arrow"><div class="flow-arrow-line"></div></div>
-          <div class="flow-node" style="background:rgba(255,85,102,.08);border-color:var(--red);font-size:12px;padding:10px 16px">Boolean: already revealed<br>OR flagged?</div>
+          <div class="flow-node" style="background:rgba(255,85,102,.08);border-color:var(--red);font-size:12px;padding:10px 16px">Boolean: already revealed<br>OR collared?</div>
           <div class="flow-arrow"><div class="flow-arrow-line"></div><span style="font-size:11px;color:var(--green)">No → continue</span></div>
           <div class="flow-node" style="background:rgba(77,166,255,.06);border-color:var(--blue);font-size:12px;padding:10px 16px">Is this first_click?</div>
-          <div class="flow-arrow"><div class="flow-arrow-line"></div><span style="font-size:11px;color:var(--green)">Yes → place_mines() + start timer</span></div>
-          <div class="flow-node" style="background:rgba(255,85,102,.08);border-color:var(--red);font-size:12px;padding:10px 16px">Is it a mine?</div>
+          <div class="flow-arrow"><div class="flow-arrow-line"></div><span style="font-size:11px;color:var(--green)">Yes → place_cats() + start timer</span></div>
+          <div class="flow-node" style="background:rgba(255,85,102,.08);border-color:var(--red);font-size:12px;padding:10px 16px">Is it a cat?</div>
           <div style="display:flex;gap:20px;width:100%;margin-top:4px">
             <div style="flex:1;display:flex;flex-direction:column;align-items:center">
-              <div style="font-size:11px;color:var(--red);margin-bottom:4px">Yes 💣</div>
-              <div class="flow-node end-lose" style="font-size:12px;padding:8px 12px">game_over = True<br>reveal_all_mines()</div>
+              <div style="font-size:11px;color:var(--red);margin-bottom:4px">Yes 🐱</div>
+              <div class="flow-node end-lose" style="font-size:12px;padding:8px 12px">game_over = True<br>show_all_cats()</div>
             </div>
             <div style="flex:1;display:flex;flex-direction:column;align-items:center">
               <div style="font-size:11px;color:var(--green);margin-bottom:4px">No ✓</div>
@@ -685,17 +718,17 @@ if NOT game_over:
         <div class="flow">
           <div class="flow-node start">You right-click a square</div>
           <div class="flow-arrow"><div class="flow-arrow-line"></div><div class="flow-arrow-head">▼</div></div>
-          <div class="flow-node action">right_click(event, row, col)</div>
+          <div class="flow-node action">right_click(row, col)</div>
           <div class="flow-arrow"><div class="flow-arrow-line"></div></div>
           <div class="flow-node" style="background:rgba(255,85,102,.08);border-color:var(--red);font-size:12px;padding:10px 16px">Boolean: NOT game_over?</div>
           <div class="flow-arrow"><div class="flow-arrow-line"></div><span style="font-size:11px;color:var(--green)">Yes →</span></div>
-          <div class="flow-node action">toggle_flag(row, col)</div>
+          <div class="flow-node action">toggle_collar(row, col)</div>
           <div class="flow-arrow"><div class="flow-arrow-line"></div></div>
           <div class="flow-node" style="background:rgba(255,85,102,.08);border-color:var(--red);font-size:12px;padding:10px 16px">Boolean: is_revealed?</div>
           <div class="flow-arrow"><div class="flow-arrow-line"></div><span style="font-size:11px;color:var(--green)">No → allowed</span></div>
-          <div class="flow-node" style="font-size:12px;padding:10px 16px">is_flagged = NOT is_flagged</div>
+          <div class="flow-node" style="font-size:12px;padding:10px 16px">is_collared = NOT is_collared</div>
           <div class="flow-arrow"><div class="flow-arrow-line"></div></div>
-          <div class="flow-node end-win" style="font-size:12px;padding:8px 12px">Update mine counter on screen</div>
+          <div class="flow-node end-win" style="font-size:12px;padding:8px 12px">Update cat counter on screen</div>
         </div>
       </div>
 
@@ -718,10 +751,10 @@ if NOT game_over:
           <div style="font-size:13px;font-weight:600;margin-bottom:10px;color:var(--text)">📌 Key facts</div>
           <div style="display:flex;flex-direction:column;gap:8px">
             <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--text2);line-height:1.6"><span style="color:var(--accent2);font-weight:600">100 Cell objects</span> created at startup — one per square</div>
-            <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--text2);line-height:1.6"><span style="color:var(--green);font-weight:600">Mines placed AFTER</span> first click to guarantee a safe opening</div>
+            <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--text2);line-height:1.6"><span style="color:var(--green);font-weight:600">Cats placed AFTER</span> first click to guarantee a safe opening</div>
             <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--text2);line-height:1.6"><span style="color:var(--blue);font-weight:600">window.after(1000)</span> schedules the timer without freezing the UI</div>
             <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--text2);line-height:1.6"><span style="color:var(--orange);font-weight:600">BFS deque</span> auto-reveals entire empty regions in one click</div>
-            <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--text2);line-height:1.6"><span style="color:var(--yellow);font-weight:600">Win = 90 safe cells</span> revealed (100 total − 10 mines)</div>
+            <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--text2);line-height:1.6"><span style="color:var(--yellow);font-weight:600">Win = 90 safe cells</span> revealed (100 total − 10 cats)</div>
           </div>
         </div>
       </div>
@@ -733,7 +766,7 @@ if NOT game_over:
   <div id="tab-source-inline" class="tab-panel tab-source-panel">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px">
       <div>
-        <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:2px">minesweeper.py — full source</div>
+        <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:2px">catstrophe.py — full source</div>
         <div style="font-size:12px;color:var(--text3)">Click any line to ask the AI · Hover for section name</div>
       </div>
       <div style="display:flex;gap:5px;flex-wrap:wrap" id="inline-jump-row">
@@ -754,13 +787,13 @@ if NOT game_over:
           <div style="width:10px;height:10px;border-radius:50%;background:#FEBC2E"></div>
           <div style="width:10px;height:10px;border-radius:50%;background:#28C840"></div>
         </div>
-        <span style="font-size:12px;color:var(--text2);font-family:var(--font-mono);margin-left:4px">minesweeper.py</span>
+        <span style="font-size:12px;color:var(--text2);font-family:var(--font-mono);margin-left:4px">catstrophe.py</span>
         <span style="margin-left:auto;font-size:11px;color:var(--text3)">click any line · ask AI instantly</span>
       </div>
       <div id="src-lines-inline" style="overflow-y:auto;max-height:72vh;padding:6px 0;font-family:var(--font-mono);font-size:12px;line-height:1.8"></div>
       <!-- Multi-match popup inside code box -->
       <div id="src-multi-popup-inline" style="display:none;position:sticky;bottom:0;left:0;right:0;background:rgba(26,26,56,.97);border-top:1px solid #7B6FFF;padding:8px 14px;align-items:center;gap:10px;z-index:10;flex-wrap:wrap">
-        <span style="font-size:11px;color:#9090C0" id="src-multi-label-inline">0 matches</span>
+        <span style="font-size:11px;color:var(--text3)" id="src-multi-label-inline">0 matches</span>
         <div style="display:flex;gap:5px;margin-left:auto;align-items:center">
           <button class="src-multi-btn" onclick="srcMultiPrev()">← Prev</button>
           <span id="src-multi-pos-inline" style="font-size:11px;color:#A084FF;font-family:var(--font-mono);padding:2px 6px">1/1</span>
@@ -803,7 +836,7 @@ if NOT game_over:
         <tr><td class="F">F</td><td class="T">T</td><td class="F">False</td></tr>
         <tr><td class="F">F</td><td class="F">F</td><td class="F">False</td></tr>
       </table>
-      <div style="font-family:var(--font-mono);font-size:11px;color:var(--accent2);margin-top:10px;line-height:1.8">Game use:<br>if not revealed and not flagged: ...</div>
+      <div style="font-family:var(--font-mono);font-size:11px;color:var(--accent2);margin-top:10px;line-height:1.8">Game use:<br>if not revealed and not collared: ...</div>
     </div>
     <div class="bool-card or">
       <div class="bool-op">OR</div>
@@ -816,18 +849,18 @@ if NOT game_over:
         <tr><td class="F">F</td><td class="T">T</td><td class="T">True</td></tr>
         <tr><td class="F">F</td><td class="F">F</td><td class="F">False</td></tr>
       </table>
-      <div style="font-family:var(--font-mono);font-size:11px;color:var(--accent2);margin-top:10px;line-height:1.8">Game use:<br>if revealed or flagged: return</div>
+      <div style="font-family:var(--font-mono);font-size:11px;color:var(--accent2);margin-top:10px;line-height:1.8">Game use:<br>if revealed or collared: return</div>
     </div>
     <div class="bool-card xor">
       <div class="bool-op">NOT (toggle)</div>
       <div class="bool-title">Toggle — flip a boolean</div>
-      <div class="bool-desc">Setting a variable to NOT itself flips it between True and False. This is how flagging works — one right-click places the flag, next right-click removes it.</div>
+      <div class="bool-desc">Setting a variable to NOT itself flips it between True and False. This is how collaring works — one right-click places the collar, next right-click removes it.</div>
       <table class="truth-table">
         <tr><th>Before</th><th>After toggle</th><th>Effect</th></tr>
-        <tr><td class="F">False</td><td class="T">True</td><td>🚩 Flag placed</td></tr>
-        <tr><td class="T">True</td><td class="F">False</td><td>Flag removed</td></tr>
+        <tr><td class="F">False</td><td class="T">True</td><td><svg viewBox="0 0 24 24" width="1em" height="1em" style="vertical-align:-3px" xmlns="http://www.w3.org/2000/svg"><path d="M3 9c0-3.5 4-6 9-6s9 2.5 9 6" fill="none" stroke="#8B5A2B" stroke-width="2.2" stroke-linecap="round"/><circle cx="4.5" cy="9.6" r="1.15" fill="#6B4226"/><circle cx="9.5" cy="11.4" r="1.15" fill="#6B4226"/><circle cx="14.5" cy="11.4" r="1.15" fill="#6B4226"/><circle cx="19.5" cy="9.6" r="1.15" fill="#6B4226"/><circle cx="12" cy="16.3" r="3" fill="#F2C14E" stroke="#C1622D" stroke-width="1.3"/></svg> Collar placed</td></tr>
+        <tr><td class="T">True</td><td class="F">False</td><td>Collar removed</td></tr>
       </table>
-      <div style="font-family:var(--font-mono);font-size:11px;color:var(--accent2);margin-top:10px;line-height:1.8">Game use:<br>is_flagged = not is_flagged</div>
+      <div style="font-family:var(--font-mono);font-size:11px;color:var(--accent2);margin-top:10px;line-height:1.8">Game use:<br>is_collared = not is_collared</div>
     </div>
   </div>
 
@@ -835,11 +868,11 @@ if NOT game_over:
   <h3 style="font-size:16px;font-weight:600;margin:36px 0 16px;color:var(--text)">All 7 boolean rules used in this game</h3>
 
   <div class="bool-rule"><div class="bool-icon">🖱️</div><div><div class="bool-rule-code">accept_click = <span style="color:var(--red)">NOT</span> game_over</div><div class="bool-rule-desc">Before doing anything with a click, check game hasn't ended. If game_over is True, ignore all clicks.</div></div></div>
-  <div class="bool-rule"><div class="bool-icon">👁️</div><div><div class="bool-rule-code">can_reveal = <span style="color:var(--red)">NOT</span> is_revealed <span style="color:var(--blue)">AND</span> <span style="color:var(--red)">NOT</span> is_flagged</div><div class="bool-rule-desc">A cell can only be revealed if it hasn't already been opened AND it hasn't been flagged. Both conditions must be false.</div></div></div>
-  <div class="bool-rule"><div class="bool-icon">🚩</div><div><div class="bool-rule-code">can_flag = <span style="color:var(--red)">NOT</span> is_revealed</div><div class="bool-rule-desc">You can only place or remove a flag if the cell hasn't been revealed yet. Open cells can't be flagged.</div></div></div>
-  <div class="bool-rule"><div class="bool-icon">💣</div><div><div class="bool-rule-code">can_place_mine = <span style="color:var(--red)">NOT</span> in_safe_zone <span style="color:var(--blue)">AND</span> <span style="color:var(--red)">NOT</span> already_mine</div><div class="bool-rule-desc">When placing 10 mines: skip if the position is in the first-click's safe zone, AND skip if a mine is already there.</div></div></div>
-  <div class="bool-rule"><div class="bool-icon">🔢</div><div><div class="bool-rule-code">count_for_win = <span style="color:var(--red)">NOT</span> is_mine <span style="color:var(--blue)">AND</span> is_revealed</div><div class="bool-rule-desc">A cell counts toward the win condition only if it's safe (not a mine) AND it's been opened. Used to check all 90 safe cells.</div></div></div>
-  <div class="bool-rule"><div class="bool-icon">🌊</div><div><div class="bool-rule-code">expand_bfs = <span style="color:var(--red)">NOT</span> is_revealed <span style="color:var(--blue)">AND</span> <span style="color:var(--red)">NOT</span> is_flagged <span style="color:var(--blue)">AND</span> <span style="color:var(--red)">NOT</span> is_mine</div><div class="bool-rule-desc">In flood fill: add a neighbour to the queue only if it hasn't been revealed, isn't flagged, and isn't a mine. Three conditions, all with NOT.</div></div></div>
+  <div class="bool-rule"><div class="bool-icon">👁️</div><div><div class="bool-rule-code">can_reveal = <span style="color:var(--red)">NOT</span> is_revealed <span style="color:var(--blue)">AND</span> <span style="color:var(--red)">NOT</span> is_collared</div><div class="bool-rule-desc">A cell can only be revealed if it hasn't already been opened AND it hasn't been collared. Both conditions must be false.</div></div></div>
+  <div class="bool-rule"><div class="bool-icon"><svg viewBox="0 0 24 24" width="1em" height="1em" style="vertical-align:-3px" xmlns="http://www.w3.org/2000/svg"><path d="M3 9c0-3.5 4-6 9-6s9 2.5 9 6" fill="none" stroke="#8B5A2B" stroke-width="2.2" stroke-linecap="round"/><circle cx="4.5" cy="9.6" r="1.15" fill="#6B4226"/><circle cx="9.5" cy="11.4" r="1.15" fill="#6B4226"/><circle cx="14.5" cy="11.4" r="1.15" fill="#6B4226"/><circle cx="19.5" cy="9.6" r="1.15" fill="#6B4226"/><circle cx="12" cy="16.3" r="3" fill="#F2C14E" stroke="#C1622D" stroke-width="1.3"/></svg></div><div><div class="bool-rule-code">can_collar = <span style="color:var(--red)">NOT</span> is_revealed</div><div class="bool-rule-desc">You can only place or remove a collar if the cell hasn't been revealed yet. Open cells can't be collared.</div></div></div>
+  <div class="bool-rule"><div class="bool-icon">🐱</div><div><div class="bool-rule-code">can_place_cat = <span style="color:var(--red)">NOT</span> in_safe_zone <span style="color:var(--blue)">AND</span> <span style="color:var(--red)">NOT</span> already_cat</div><div class="bool-rule-desc">When placing 10 cats: skip if the position is in the first-click's safe zone, AND skip if a cat is already there.</div></div></div>
+  <div class="bool-rule"><div class="bool-icon">🔢</div><div><div class="bool-rule-code">count_for_win = <span style="color:var(--red)">NOT</span> is_cat <span style="color:var(--blue)">AND</span> is_revealed</div><div class="bool-rule-desc">A cell counts toward the win condition only if it's safe (not a cat) AND it's been opened. Used to check all 90 safe cells.</div></div></div>
+  <div class="bool-rule"><div class="bool-icon">🌊</div><div><div class="bool-rule-code">expand_bfs = <span style="color:var(--red)">NOT</span> is_revealed <span style="color:var(--blue)">AND</span> <span style="color:var(--red)">NOT</span> is_collared <span style="color:var(--blue)">AND</span> <span style="color:var(--red)">NOT</span> is_cat</div><div class="bool-rule-desc">In flood fill: add a neighbour to the queue only if it hasn't been revealed, isn't collared, and isn't a cat. Three conditions, all with NOT.</div></div></div>
   <div class="bool-rule"><div class="bool-icon">⏱️</div><div><div class="bool-rule-code">tick_timer = <span style="color:var(--red)">NOT</span> game_over <span style="color:var(--blue)">AND</span> start_time <span style="color:var(--red)">is not</span> None</div><div class="bool-rule-desc">The timer only counts while the game is active AND after the first click (start_time is only set on first click).</div></div></div>
 
   <!-- Interactive boolean checker -->
@@ -852,9 +885,9 @@ if NOT game_over:
       <span id="lbl-revealed" style="font-size:12px;font-family:var(--font-mono);color:var(--red)">False</span>
     </div>
     <div class="toggle-row">
-      <span class="toggle-label">is_flagged</span>
-      <label class="toggle-switch"><input type="checkbox" id="chk-flagged" onchange="evalBool()"><span class="toggle-slider"></span></label>
-      <span id="lbl-flagged" style="font-size:12px;font-family:var(--font-mono);color:var(--red)">False</span>
+      <span class="toggle-label">is_collared</span>
+      <label class="toggle-switch"><input type="checkbox" id="chk-collared" onchange="evalBool()"><span class="toggle-slider"></span></label>
+      <span id="lbl-collared" style="font-size:12px;font-family:var(--font-mono);color:var(--red)">False</span>
     </div>
     <div class="toggle-row">
       <span class="toggle-label">game_over</span>
@@ -875,7 +908,7 @@ if NOT game_over:
 <section id="bfs" class="section">
   <div class="section-label">The auto-reveal algorithm</div>
   <h2 class="section-title">Flood fill — how empty areas auto-open</h2>
-  <p class="section-sub">When you click a blank square (zero nearby mines), the game auto-reveals an entire connected region. This uses a computer science algorithm called Breadth First Search (BFS). Step through it to see how it works.</p>
+  <p class="section-sub">When you click a blank square (zero nearby cats), the game auto-reveals an entire connected region. This uses a computer science algorithm called Breadth First Search (BFS). Step through it to see how it works.</p>
 
   <div class="callout callout-info" style="margin-top:24px"><span class="callout-icon">💡</span><span><strong>BFS in plain English:</strong> Start with one square. Check all its neighbours. If a neighbour is safe and empty, add it to a queue. Process the queue one by one, checking each square's neighbours. Keep going until the queue is empty.</span></div>
 
@@ -885,13 +918,13 @@ if NOT game_over:
       <button class="bfs-btn" onclick="bfsStep()">Step →</button>
       <button class="bfs-btn" onclick="bfsAuto()">▶ Auto-play</button>
     </div>
-    <div class="bfs-step-info" id="bfs-info">Click "Step" to begin. The highlighted cell (green) was just clicked — it has 0 nearby mines.</div>
+    <div class="bfs-step-info" id="bfs-info">Click "Step" to begin. The highlighted cell (green) was just clicked — it has 0 nearby cats.</div>
     <div class="bfs-grid" id="bfs-grid"></div>
     <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:10px;font-size:12px;color:var(--text2)">
       <span><span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:rgba(68,221,136,.2);border:1px solid var(--green);vertical-align:middle;margin-right:4px"></span>Origin (clicked)</span>
-      <span><span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:rgba(123,111,255,.25);border:1px solid var(--accent);vertical-align:middle;margin-right:4px"></span>In queue (to be processed)</span>
+      <span><span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:rgba(107,66,38,.25);border:1px solid var(--accent);vertical-align:middle;margin-right:4px"></span>In queue (to be processed)</span>
       <span><span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:var(--cell-r);border:1px solid var(--border);vertical-align:middle;margin-right:4px"></span>Visited (revealed)</span>
-      <span><span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:var(--cell);border:1px solid var(--border2);vertical-align:middle;margin-right:4px"></span>Wall (has a mine / number)</span>
+      <span><span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:var(--cell);border:1px solid var(--border2);vertical-align:middle;margin-right:4px"></span>Wall (has a cat / number)</span>
     </div>
   </div>
 
@@ -905,10 +938,10 @@ if NOT game_over:
         row, col = queue.popleft()            <span class="cm"># take next cell from front</span>
         <span class="kw">for</span> nr, nc <span class="kw">in</span> self.<span class="fn">get_neighbours</span>(row, col):
             cell = self.board[nr][nc]
-            <span class="cm"># Boolean: only if NOT revealed AND NOT flagged AND NOT mine</span>
-            <span class="kw">if not</span> cell.is_revealed <span class="kw">and not</span> cell.is_flagged <span class="kw">and not</span> cell.is_mine:
+            <span class="cm"># Boolean: only if NOT revealed AND NOT collared AND NOT cat</span>
+            <span class="kw">if not</span> cell.is_revealed <span class="kw">and not</span> cell.is_collared <span class="kw">and not</span> cell.is_cat:
                 cell.is_revealed = <span class="kw">True</span>
-                self.<span class="fn">_draw_cell</span>(nr, nc)
+                cell.button.config(text=<span class="str">""</span>, bg=CELL_REVEAL, relief=<span class="str">"sunken"</span>)
                 <span class="kw">if</span> cell.neighbour_count == <span class="num">0</span>:
                     queue.append((nr, nc))    <span class="cm"># empty: keep expanding</span>
                 <span class="cm"># else: number cell — reveal it but don't expand further</span></pre>
@@ -924,17 +957,17 @@ if NOT game_over:
   <p class="section-sub">Quick definitions for every programming concept used in this game.</p>
   <div class="glossary-grid">
     <div class="glossary-card"><div class="glossary-term">class</div><div class="glossary-def">A template/blueprint for creating objects. Like a cookie cutter — the class is the cutter, each object made from it is a cookie.</div></div>
-    <div class="glossary-card"><div class="glossary-term">instance</div><div class="glossary-def">One specific object made from a class. There are 100 Cell instances (one per square) and 1 MinesweeperGame instance.</div></div>
+    <div class="glossary-card"><div class="glossary-term">instance</div><div class="glossary-def">One specific object made from a class. There are 100 Cell instances (one per square) and 1 CatstropheGame instance.</div></div>
     <div class="glossary-card"><div class="glossary-term">__init__()</div><div class="glossary-def">The constructor — runs automatically when you create an instance. Sets up all the starting values. Called once per object.</div></div>
-    <div class="glossary-card"><div class="glossary-term">self</div><div class="glossary-def">Inside a class method, "self" refers to the current instance. self.is_mine means "this cell's is_mine variable."</div></div>
-    <div class="glossary-card"><div class="glossary-term">boolean</div><div class="glossary-def">A value that is either True or False. Named after mathematician George Boole. All the cell states (is_mine, is_revealed, is_flagged) are booleans.</div></div>
+    <div class="glossary-card"><div class="glossary-term">self</div><div class="glossary-def">Inside a class method, "self" refers to the current instance. self.is_cat means "this cell's is_cat variable."</div></div>
+    <div class="glossary-card"><div class="glossary-term">boolean</div><div class="glossary-def">A value that is either True or False. Named after mathematician George Boole. All the cell states (is_cat, is_revealed, is_collared) are booleans.</div></div>
     <div class="glossary-card"><div class="glossary-term">deque</div><div class="glossary-def">A "double-ended queue" from Python's collections module. Used in BFS because adding/removing from both ends is O(1) — faster than a regular list.</div></div>
     <div class="glossary-card"><div class="glossary-term">BFS</div><div class="glossary-def">Breadth First Search — explores all neighbours level by level. Used in flood fill to auto-reveal connected empty squares in the right order.</div></div>
-    <div class="glossary-card"><div class="glossary-term">StringVar</div><div class="glossary-def">A special tkinter variable. When you change its value, any label or widget connected to it updates automatically on screen. Used for the timer and mine counter.</div></div>
-    <div class="glossary-card"><div class="glossary-term">lambda</div><div class="glossary-def">A tiny anonymous function written inline. Used in connect_buttons() so each cell's click handler remembers its own (row, col): lambda r=row, c=col: ...</div></div>
+    <div class="glossary-card"><div class="glossary-term">StringVar</div><div class="glossary-def">A special tkinter variable. When you change its value, any label or widget connected to it updates automatically on screen. Used for the timer and cat counter.</div></div>
+    <div class="glossary-card"><div class="glossary-term">lambda</div><div class="glossary-def">A tiny anonymous function written inline. Used in _build_board() so each cell's click handler remembers its own (row, col): lambda r=row, c=col: ...</div></div>
     <div class="glossary-card"><div class="glossary-term">window.after()</div><div class="glossary-def">Tkinter's way to schedule something to run later without freezing. Used by update_timer() to tick every 1000ms without blocking the UI.</div></div>
     <div class="glossary-card"><div class="glossary-term">O(n)</div><div class="glossary-def">Big-O notation — how an algorithm scales. O(rows×cols) means the time grows proportionally with the board size. BFS is O(rows×cols) worst case.</div></div>
-    <div class="glossary-card"><div class="glossary-term">safe zone</div><div class="glossary-def">The first-clicked cell and its 8 neighbours. Mines are never placed here, guaranteeing the very first click is always safe and opens a good area.</div></div>
+    <div class="glossary-card"><div class="glossary-term">safe zone</div><div class="glossary-def">The first-clicked cell and its 8 neighbours. Cats are never placed here, guaranteeing the very first click is always safe and opens a good area.</div></div>
   </div>
 </section>
 
@@ -951,8 +984,15 @@ if NOT game_over:
 
 <!-- ── FOOTER ── -->
 <footer style="background:var(--surface);border-top:1px solid var(--border);padding:2rem;text-align:center">
-  <p style="font-size:13px;color:var(--text3)">Minesweeper — Boolean Algebra CIA-1 · CHRIST University · BCA</p>
+  <p style="font-size:13px;color:var(--text3)">Cat-tastrophe — Boolean Algebra CIA-1 · CHRIST University · BCA</p>
   <p style="font-size:12px;color:var(--text3);margin-top:4px">Built with Python · tkinter · BFS · Boolean Algebra</p>
+  <p style="font-size:11px;color:var(--text3);margin-top:16px">Created by</p>
+  <ul style="list-style:none;padding:0;margin:6px 0 0;font-size:12px;color:var(--text2);display:flex;flex-direction:column;gap:3px">
+    <li>Basil Eldhose — 2643013</li>
+    <li>Darshan A R — 2643018</li>
+    <li>Farhaan S Mohammad — 2643023</li>
+    <li>Samad Azim — 2643045</li>
+  </ul>
 </footer>
 
 <script>
@@ -973,8 +1013,8 @@ if(heroBoard){
     const c = document.createElement('div');
     c.className = 'mini-cell';
     if(type==='h'){c.className+=' mc-hidden';c.textContent=''}
-    else if(type==='f'){c.className+=' mc-flag';c.textContent='🚩'}
-    else if(type==='m'){c.className+=' mc-mine';c.textContent='💣'}
+    else if(type==='f'){c.className+=' mc-collar';c.innerHTML='<svg viewBox="0 0 24 24" width="14" height="14" xmlns="http://www.w3.org/2000/svg"><path d="M3 9c0-3.5 4-6 9-6s9 2.5 9 6" fill="none" stroke="#8B5A2B" stroke-width="2.2" stroke-linecap="round"/><circle cx="4.5" cy="9.6" r="1.15" fill="#6B4226"/><circle cx="9.5" cy="11.4" r="1.15" fill="#6B4226"/><circle cx="14.5" cy="11.4" r="1.15" fill="#6B4226"/><circle cx="19.5" cy="9.6" r="1.15" fill="#6B4226"/><circle cx="12" cy="16.3" r="3" fill="#F2C14E" stroke="#C1622D" stroke-width="1.3"/></svg>'}
+    else if(type==='m'){c.className+=' mc-cat';c.textContent='🐱'}
     else if(type==='r-'){c.className+=' mc-revealed mc-n0'}
     else if(type==='r1'){c.className+=' mc-revealed mc-n1';c.textContent='1'}
     else if(type==='r2'){c.className+=' mc-revealed mc-n2';c.textContent='2'}
@@ -998,17 +1038,17 @@ function switchTab(btn, panelId){
 }
 
 /* ══════════════════════════════════════════
-   INTERACTIVE DEMO (10×10 Minesweeper)
+   INTERACTIVE DEMO (10×10 Cat-tastrophe)
 ══════════════════════════════════════════ */
-let dBoard=[], dMines=new Set(), dFirstClick=true, dGameOver=false, dFlagCount=0;
-let dTimer=0, dTimerID=null, dMineCount=10;
+let dBoard=[], dCats=new Set(), dFirstClick=true, dGameOver=false, dCollarCount=0;
+let dTimer=0, dTimerID=null, dCatCount=10;
 const DROWS=10,DCOLS=10,DTOTAL=10;
 const NUM_COLORS_D=['','#5599FF','#44DD88','#FF6655','#AA66FF','#FFAA44','#44DDDD','#FF77CC','#AAAAAA'];
 
 function initDemo(){
   clearInterval(dTimerID);
-  dBoard=[];dMines=new Set();dFirstClick=true;dGameOver=false;dFlagCount=0;dTimer=0;dMineCount=10;
-  document.getElementById('d-mines').textContent=10;
+  dBoard=[];dCats=new Set();dFirstClick=true;dGameOver=false;dCollarCount=0;dTimer=0;dCatCount=10;
+  document.getElementById('d-cats').textContent=10;
   document.getElementById('d-timer').textContent='0s';
   document.getElementById('d-status').textContent='Click any square to start';
   const board=document.getElementById('demo-board');
@@ -1016,14 +1056,14 @@ function initDemo(){
   for(let r=0;r<DROWS;r++){
     dBoard.push([]);
     for(let c=0;c<DCOLS;c++){
-      dBoard[r].push({mine:false,revealed:false,flagged:false,count:0});
+      dBoard[r].push({cat:false,revealed:false,collared:false,count:0});
       const cell=document.createElement('div');
       cell.className='demo-cell';
       cell.dataset.r=r;cell.dataset.c=c;
       cell.addEventListener('click',()=>dLeftClick(r,c));
       cell.addEventListener('contextmenu',e=>{e.preventDefault();dRightClick(r,c);});
-      cell.addEventListener('mouseenter',()=>{if(!dBoard[r][c].revealed&&!dBoard[r][c].flagged&&!dGameOver)cell.style.background='var(--cell-h)';});
-      cell.addEventListener('mouseleave',()=>{if(!dBoard[r][c].revealed&&!dBoard[r][c].flagged)cell.style.background='';});
+      cell.addEventListener('mouseenter',()=>{if(!dBoard[r][c].revealed&&!dBoard[r][c].collared&&!dGameOver)cell.style.background='var(--cell-h)';});
+      cell.addEventListener('mouseleave',()=>{if(!dBoard[r][c].revealed&&!dBoard[r][c].collared)cell.style.background='';});
       board.appendChild(cell);
     }
   }
@@ -1032,7 +1072,7 @@ function initDemo(){
 
 function dGetCell(r,c){return document.querySelector(`[data-r="${r}"][data-c="${c}"]`);}
 
-function dPlaceMines(fr,fc){
+function dPlaceCats(fr,fc){
   const safe=new Set();
   safe.add(`${fr},${fc}`);
   dGetNeighbours(fr,fc).forEach(([nr,nc])=>safe.add(`${nr},${nc}`));
@@ -1040,13 +1080,13 @@ function dPlaceMines(fr,fc){
   while(placed<DTOTAL){
     const r=Math.floor(Math.random()*DROWS),c=Math.floor(Math.random()*DCOLS);
     const k=`${r},${c}`;
-    if(!safe.has(k)&&!dMines.has(k)){dMines.add(k);dBoard[r][c].mine=true;placed++;}
+    if(!safe.has(k)&&!dCats.has(k)){dCats.add(k);dBoard[r][c].cat=true;placed++;}
   }
   for(let r=0;r<DROWS;r++)for(let c=0;c<DCOLS;c++){
-    if(dBoard[r][c].mine)continue;
-    dBoard[r][c].count=dGetNeighbours(r,c).filter(([nr,nc])=>dBoard[nr][nc].mine).length;
+    if(dBoard[r][c].cat)continue;
+    dBoard[r][c].count=dGetNeighbours(r,c).filter(([nr,nc])=>dBoard[nr][nc].cat).length;
   }
-  dLog('MINES',`10 mines placed. Safe zone: (${fr},${fc}) + neighbours excluded.`,'log-reveal');
+  dLog('CATS',`10 cats placed. Safe zone: (${fr},${fc}) + neighbours excluded.`,'log-reveal');
 }
 
 function dGetNeighbours(r,c){
@@ -1059,27 +1099,101 @@ function dGetNeighbours(r,c){
   return n;
 }
 
+/* Synthesized meow: pitch rises then falls ("me-OW"), with vibrato and a
+   formant-style bandpass sweep so the timbre shifts the way a real cat's
+   mouth shape changes mid-call, plus a soft breathy noise layer for texture. */
+let dAudioCtx = null;
+function dPlayMeow(){
+  try{
+    dAudioCtx = dAudioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    const ctx = dAudioCtx;
+    const now = ctx.currentTime;
+    const dur = 0.62;
+
+    const osc = ctx.createOscillator();
+    osc.type = 'sawtooth';
+
+    const vibrato = ctx.createOscillator();
+    vibrato.type = 'sine';
+    vibrato.frequency.value = 13;
+    const vibratoGain = ctx.createGain();
+    vibratoGain.gain.value = 16;
+    vibrato.connect(vibratoGain);
+    vibratoGain.connect(osc.frequency);
+
+    const formant = ctx.createBiquadFilter();
+    formant.type = 'bandpass';
+    formant.Q.value = 5;
+
+    const gain = ctx.createGain();
+
+    const noiseBuf = ctx.createBuffer(1, ctx.sampleRate*dur, ctx.sampleRate);
+    const noiseData = noiseBuf.getChannelData(0);
+    for(let i=0;i<noiseData.length;i++) noiseData[i] = (Math.random()*2-1)*0.15;
+    const noise = ctx.createBufferSource();
+    noise.buffer = noiseBuf;
+    const noiseFilter = ctx.createBiquadFilter();
+    noiseFilter.type = 'highpass';
+    noiseFilter.frequency.value = 2000;
+    const noiseGain = ctx.createGain();
+
+    osc.connect(formant);
+    formant.connect(gain);
+    noise.connect(noiseFilter);
+    noiseFilter.connect(noiseGain);
+    noiseGain.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.frequency.setValueAtTime(500, now);
+    osc.frequency.linearRampToValueAtTime(780, now+0.11);
+    osc.frequency.exponentialRampToValueAtTime(430, now+0.34);
+    osc.frequency.exponentialRampToValueAtTime(240, now+dur);
+
+    formant.frequency.setValueAtTime(1700, now);
+    formant.frequency.linearRampToValueAtTime(2500, now+0.11);
+    formant.frequency.exponentialRampToValueAtTime(950, now+0.38);
+    formant.frequency.exponentialRampToValueAtTime(480, now+dur);
+
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(0.32, now+0.05);
+    gain.gain.exponentialRampToValueAtTime(0.24, now+0.30);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now+dur);
+
+    noiseGain.gain.setValueAtTime(0.0001, now);
+    noiseGain.gain.exponentialRampToValueAtTime(0.5, now+0.04);
+    noiseGain.gain.exponentialRampToValueAtTime(0.0001, now+0.18);
+
+    vibrato.start(now);
+    osc.start(now);
+    noise.start(now);
+    vibrato.stop(now+dur);
+    osc.stop(now+dur);
+    noise.stop(now+dur);
+  }catch(e){ /* Web Audio unavailable — game still works, just silently */ }
+}
+
 function dRevealCell(r,c){
   const cell=dBoard[r][c],el=dGetCell(r,c);
-  if(cell.revealed||cell.flagged){
-    dLog('SKIP',`(${r},${c}) skipped — Boolean: ${cell.revealed?'already revealed':'flagged'}. NOT revealed AND NOT flagged = FALSE.`,'');
+  if(cell.revealed||cell.collared){
+    dLog('SKIP',`(${r},${c}) skipped — Boolean: ${cell.revealed?'already revealed':'collared'}. NOT revealed AND NOT collared = FALSE.`,'');
     return;
   }
   if(dFirstClick){
     dFirstClick=false;
-    dPlaceMines(r,c);
+    dPlaceCats(r,c);
     dTimerID=setInterval(()=>{dTimer++;document.getElementById('d-timer').textContent=dTimer+'s';},1000);
-    dLog('FIRST',`First click at (${r},${c}). Mines placed around safe zone. Timer started.`,'log-reveal');
+    dLog('FIRST',`First click at (${r},${c}). Cats placed around safe zone. Timer started.`,'log-reveal');
   }
   cell.revealed=true;
   el.classList.add('revealed');
   el.style.background='';
-  if(cell.mine){
-    el.textContent='💣';el.classList.add('mine-exploded');
+  if(cell.cat){
+    el.textContent='🐱';el.classList.add('cat-found');
     dGameOver=true;clearInterval(dTimerID);
     document.getElementById('d-status').textContent='💥 BOOM — game over';
-    dLog('MINE',`(${r},${c}) was a MINE! game_over = True. Revealing all mines...`,'log-mine');
-    dRevealAllMines();
+    dLog('CAT',`(${r},${c}) was a CAT! game_over = True. Revealing all cats...`,'log-cat');
+    dPlayMeow();
+    dShowAllCats();
     return;
   }
   if(cell.count===0){
@@ -1101,7 +1215,7 @@ function dFloodFill(sr,sc){
     const [r,c]=queue.shift();
     dGetNeighbours(r,c).forEach(([nr,nc])=>{
       const k=`${nr},${nc}`,cell=dBoard[nr][nc],el=dGetCell(nr,nc);
-      if(!cell.revealed&&!cell.flagged&&!cell.mine&&!visited.has(k)){
+      if(!cell.revealed&&!cell.collared&&!cell.cat&&!visited.has(k)){
         visited.add(k);cell.revealed=true;expanded++;
         el.classList.add('revealed');el.style.background='';
         if(cell.count===0){el.textContent='';}
@@ -1110,35 +1224,35 @@ function dFloodFill(sr,sc){
       }
     });
   }
-  dLog('BFS',`BFS complete. ${expanded} extra cells revealed. Boolean rule: NOT revealed AND NOT flagged AND NOT mine.`,'log-bfs');
+  dLog('BFS',`BFS complete. ${expanded} extra cells revealed. Boolean rule: NOT revealed AND NOT collared AND NOT cat.`,'log-bfs');
 }
 
 function dRightClick(r,c){
   if(dGameOver)return;
   const cell=dBoard[r][c],el=dGetCell(r,c);
-  if(cell.revealed){dLog('SKIP',`(${r},${c}) can't flag — Boolean: is_revealed = True. NOT revealed = FALSE.`,'');return;}
-  cell.flagged=!cell.flagged;
-  if(cell.flagged){
-    el.textContent='🚩';el.style.color='';dFlagCount++;
-    dLog('FLAG',`(${r},${c}) flagged. is_flagged toggled True. NOT is_flagged → True.`,'log-right');
+  if(cell.revealed){dLog('SKIP',`(${r},${c}) can't collar — Boolean: is_revealed = True. NOT revealed = FALSE.`,'');return;}
+  cell.collared=!cell.collared;
+  if(cell.collared){
+    el.innerHTML='<svg viewBox="0 0 24 24" width="16" height="16" xmlns="http://www.w3.org/2000/svg"><path d="M3 9c0-3.5 4-6 9-6s9 2.5 9 6" fill="none" stroke="#8B5A2B" stroke-width="2.2" stroke-linecap="round"/><circle cx="4.5" cy="9.6" r="1.15" fill="#6B4226"/><circle cx="9.5" cy="11.4" r="1.15" fill="#6B4226"/><circle cx="14.5" cy="11.4" r="1.15" fill="#6B4226"/><circle cx="19.5" cy="9.6" r="1.15" fill="#6B4226"/><circle cx="12" cy="16.3" r="3" fill="#F2C14E" stroke="#C1622D" stroke-width="1.3"/></svg>';el.style.color='';dCollarCount++;
+    dLog('COLLAR',`(${r},${c}) collared. is_collared toggled True. NOT is_collared → True.`,'log-right');
   }else{
-    el.textContent='';dFlagCount--;
-    dLog('FLAG',`(${r},${c}) flag removed. is_flagged toggled False.`,'log-right');
+    el.textContent='';dCollarCount--;
+    dLog('COLLAR',`(${r},${c}) collar removed. is_collared toggled False.`,'log-right');
   }
-  dMineCount=DTOTAL-dFlagCount;
-  document.getElementById('d-mines').textContent=dMineCount;
+  dCatCount=DTOTAL-dCollarCount;
+  document.getElementById('d-cats').textContent=dCatCount;
 }
 
-function dRevealAllMines(){
+function dShowAllCats(){
   for(let r=0;r<DROWS;r++)for(let c=0;c<DCOLS;c++){
     const cell=dBoard[r][c],el=dGetCell(r,c);
-    if(cell.mine&&!cell.revealed){el.textContent='💣';el.classList.add('mine-shown');el.style.background='#2A0D18';}
+    if(cell.cat&&!cell.revealed){el.textContent='🐱';el.classList.add('cat-shown');el.style.background='#5A2418';}
   }
 }
 
 function dCheckWin(){
   const totalSafe=DROWS*DCOLS-DTOTAL;
-  const revealed=dBoard.flat().filter(c=>!c.mine&&c.revealed).length;
+  const revealed=dBoard.flat().filter(c=>!c.cat&&c.revealed).length;
   if(revealed===totalSafe){
     dGameOver=true;clearInterval(dTimerID);
     document.getElementById('d-status').textContent='🎉 You won!';
@@ -1171,10 +1285,10 @@ function autoPlay(){
     return;
   }
   if(dFirstClick){dLeftClick(4,4);return;}
-  // find a safe unrevealed unflagged cell and click it
+  // find a safe unrevealed uncollared cell and click it
   for(let r=0;r<DROWS;r++)for(let c=0;c<DCOLS;c++){
     const cell=dBoard[r][c];
-    if(!cell.revealed&&!cell.flagged&&!cell.mine){dLeftClick(r,c);return;}
+    if(!cell.revealed&&!cell.collared&&!cell.cat){dLeftClick(r,c);return;}
   }
 }
 
@@ -1185,26 +1299,26 @@ initDemo();
 ══════════════════════════════════════════ */
 function evalBool(){
   const rev=document.getElementById('chk-revealed').checked;
-  const flag=document.getElementById('chk-flagged').checked;
+  const collar=document.getElementById('chk-collared').checked;
   const go=document.getElementById('chk-gameover').checked;
   document.getElementById('lbl-revealed').textContent=rev?'True':'False';
   document.getElementById('lbl-revealed').style.color=rev?'var(--green)':'var(--red)';
-  document.getElementById('lbl-flagged').textContent=flag?'True':'False';
-  document.getElementById('lbl-flagged').style.color=flag?'var(--green)':'var(--red)';
+  document.getElementById('lbl-collared').textContent=collar?'True':'False';
+  document.getElementById('lbl-collared').style.color=collar?'var(--green)':'var(--red)';
   document.getElementById('lbl-gameover').textContent=go?'True':'False';
   document.getElementById('lbl-gameover').style.color=go?'var(--green)':'var(--red)';
 
-  const canReveal=!rev&&!flag&&!go;
+  const canReveal=!rev&&!collar&&!go;
   const ans=document.getElementById('bool-answer');
   const expr=document.getElementById('bool-expr');
   ans.textContent=canReveal?'✅  YES — cell can be revealed':'❌  NO — blocked by boolean rule';
   ans.className='result-value '+(canReveal?'result-true':'result-false');
-  const nr=`NOT ${rev}`,nf=`NOT ${flag}`,ngo=`NOT ${go}`;
+  const nr=`NOT ${rev}`,nf=`NOT ${collar}`,ngo=`NOT ${go}`;
   expr.innerHTML=`${nr} AND ${nf} AND ${ngo} → <span style="color:${canReveal?'var(--green)':'var(--red)'};font-weight:600">${canReveal}</span>`;
   let reason='';
   if(go)reason='game_over is True — all clicks disabled.';
   else if(rev)reason='Cell already revealed — can\'t open it again.';
-  else if(flag)reason='Cell is flagged — remove the flag first.';
+  else if(collar)reason='Cell is collared — remove the collar first.';
   else reason='All three conditions pass — proceed to reveal!';
   document.getElementById('bool-result').title=reason;
 }
@@ -1212,7 +1326,7 @@ function evalBool(){
 /* ══════════════════════════════════════════
    BFS VISUALISER
 ══════════════════════════════════════════ */
-// 8×8 grid: 0=empty, 1-8=number, 9=wall(mine-adjacent/mine)
+// 8×8 grid: 0=empty, 1-8=number, 9=wall(cat-adjacent/cat)
 const BFS_MAP=[
   [9,9,0,0,0,9,9,9],
   [9,1,1,1,0,1,9,9],
@@ -1232,7 +1346,7 @@ function bfsReset(){
   bfsVisited=new Set([`${BFS_ORIGIN[0]},${BFS_ORIGIN[1]}`]);
   bfsStep_=0;
   bfsDraw();
-  document.getElementById('bfs-info').textContent='Click "Step" to begin. The green cell was just clicked — it has 0 nearby mines.';
+  document.getElementById('bfs-info').textContent='Click "Step" to begin. The green cell was just clicked — it has 0 nearby cats.';
 }
 
 function bfsDraw(){
@@ -1301,25 +1415,25 @@ bfsReset();
 ══════════════════════════════════════════ */
 const QUESTIONS=[
   {q:"What does 'NOT is_revealed' mean in the reveal_cell() function?",
-   opts:["The cell has been revealed","The cell has NOT been revealed yet","The game is not over","The cell is flagged"],
+   opts:["The cell has been revealed","The cell has NOT been revealed yet","The game is not over","The cell is collared"],
    ans:1,
    ex:"'NOT is_revealed' evaluates to True only when is_revealed is False — i.e. the cell hasn't been opened yet. This is the first boolean guard in reveal_cell()."},
-  {q:"Why are mines placed AFTER the first click, not before?",
-   opts:["It's faster that way","So the board looks nicer","To guarantee the first click is always safe — mines avoid the safe zone","Because Python is slow"],
+  {q:"Why are cats placed AFTER the first click, not before?",
+   opts:["It's faster that way","So the board looks nicer","To guarantee the first click is always safe — cats avoid the safe zone","Because Python is slow"],
    ans:2,
-   ex:"The first click position + its 8 neighbours form a 'safe zone'. Mines are placed after so they can avoid this zone, making sure the player never hits a mine on their very first click."},
+   ex:"The first click position + its 8 neighbours form a 'safe zone'. Cats are placed after so they can avoid this zone, making sure the player never hits a cat on their very first click."},
   {q:"What algorithm does flood_fill() use?",
    opts:["Depth First Search (DFS)","Binary Search","Breadth First Search (BFS)","Bubble Sort"],
    ans:2,
    ex:"BFS uses a queue (deque) to explore cells level by level — all cells at distance 1 first, then distance 2, etc. This ensures the empty region is revealed outward from the clicked cell."},
-  {q:"The boolean expression for flood_fill's expansion is: 'NOT revealed AND NOT flagged AND NOT mine'. If is_flagged = True, what is the result?",
-   opts:["True — cell gets added to queue","False — cell is skipped","Depends on is_mine","Depends on is_revealed"],
+  {q:"The boolean expression for flood_fill's expansion is: 'NOT revealed AND NOT collared AND NOT cat'. If is_collared = True, what is the result?",
+   opts:["True — cell gets added to queue","False — cell is skipped","Depends on is_cat","Depends on is_revealed"],
    ans:1,
-   ex:"NOT flagged = NOT True = False. Anything AND False = False. So the whole expression is False — the cell is skipped. AND requires ALL conditions to be True."},
+   ex:"NOT collared = NOT True = False. Anything AND False = False. So the whole expression is False — the cell is skipped. AND requires ALL conditions to be True."},
   {q:"How does check_win() decide you've won?",
-   opts:["When all flags are placed on mines","When the timer reaches 999","When the count of (NOT mine AND revealed) cells equals total_safe (90)","When you click the win button"],
+   opts:["When all collars are placed on cats","When the timer reaches 999","When the count of (NOT cat AND revealed) cells equals total_safe (90)","When you click the win button"],
    ans:2,
-   ex:"total_safe = 100 cells − 10 mines = 90. check_win counts cells where is_mine=False AND is_revealed=True. When that count hits 90, every safe cell is open — win!"},
+   ex:"total_safe = 100 cells − 10 cats = 90. check_win counts cells where is_cat=False AND is_revealed=True. When that count hits 90, every safe cell is open — win!"},
 ];
 
 let qIdx=0,qAnswered=false;
@@ -1337,7 +1451,7 @@ function buildQuiz(){
     <div class="quiz-feedback" id="qfb"></div>
     <div class="quiz-nav">
       ${isLast
-        ? `<span id="q-next" style="display:none;font-size:13px;color:var(--green);font-weight:600">🎉 Quiz complete! You know your Minesweeper.</span>`
+        ? `<span id="q-next" style="display:none;font-size:13px;color:var(--green);font-weight:600">🎉 Quiz complete! You know your Cat-tastrophe.</span>`
         : `<button class="bfs-btn primary-btn" id="q-next" style="display:none" onclick="nextQ()">Next →</button>`
       }
     </div>`;
@@ -1398,7 +1512,7 @@ aiPanel.innerHTML=`
   <div id="ai-header" style="background:#1A1A38;padding:14px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #2E2E58;cursor:move;user-select:none;flex-shrink:0">
     <div style="width:32px;height:32px;background:linear-gradient(135deg,#7B6FFF,#4DA6FF);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0">🤖</div>
     <div style="flex:1">
-      <div style="font-size:13px;font-weight:600;color:#E8E8FF">Minesweeper AI Tutor</div>
+      <div style="font-size:13px;font-weight:600;color:#E8E8FF">Cat-tastrophe AI Tutor</div>
       <div style="font-size:11px;color:#5C5C90">Highlight anything · Ask anything</div>
     </div>
     <button id="ai-close" style="background:none;border:none;color:#5C5C90;font-size:18px;cursor:pointer;padding:2px 6px;border-radius:4px;line-height:1" title="Close">×</button>
@@ -1409,7 +1523,7 @@ aiPanel.innerHTML=`
   <div id="ai-messages" style="flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;min-height:200px;max-height:360px">
     <div class="ai-msg ai-msg-bot">
       <div class="ai-bubble" style="background:#1A1A38;border:1px solid #2E2E58">
-        👋 Hi! I'm your Minesweeper tutor.<br><br>
+        👋 Hi! I'm your Cat-tastrophe tutor.<br><br>
         <strong>Highlight any text</strong> on this page and I'll explain it in detail — code, boolean logic, game concepts, anything.<br><br>
         Or just ask me a question below!
       </div>
@@ -1576,7 +1690,7 @@ document.getElementById('sel-btn-ai').onclick=()=>{
   const short=currentSelection.length>60?currentSelection.slice(0,60)+'…':currentSelection;
   ctx.textContent='"'+short+'"';
   bar.style.display='block';
-  askAI('Why does this say: "'+currentSelection+'"?  Explain it simply in context of the Minesweeper game and code.', currentSelection);
+  askAI('Why does this say: "'+currentSelection+'"?  Explain it simply in context of the Cat-tastrophe game and code.', currentSelection);
   window.getSelection().removeAllRanges();
 };
 
@@ -1684,233 +1798,500 @@ function flashLineEl(el){
    SOURCE CODE RENDERER
 ══════════════════════════════════════════ */
 const SOURCE_CODE=`"""
-Minesweeper | Tkinter GUI | Boolean Algebra Edition
-=====================================================
-Concepts: OOP, Boolean Algebra, BFS (Flood Fill), Event-Driven GUI
+Cat-tastrophe | Tkinter GUI | Boolean Algebra Edition
+======================================================
+CIA-1 Project | BCA First Year | CHRIST University
+Created by Basil Eldhose 2643013, Darshan A R 2643018,
+           Farhaan S Mohammad 2643023, Samad Azim 2643045
 
-Boolean Algebra used throughout:
-  - Reveal cell only if: NOT revealed AND NOT flagged
-  - Place mine only if:  NOT safe_zone AND NOT already_mine
-  - Count win cell if:   NOT mine AND IS revealed
-  - Toggle flag only if: NOT revealed
-  - Accept click only if: NOT game_over
+Concepts used (explainable):
+  - OOP: Two classes (Cell, CatstropheGame)
+  - Boolean Algebra: All game decisions use True/False logic
+  - BFS (Flood Fill): Auto-reveal empty regions using a queue
+  - Event-Driven GUI: tkinter buttons respond to mouse clicks
+
+This is a reskin of a classic Cat-tastrophe build — cats are cats,
+collars are bells (you're "belling the cat"), and finding a cat rings
+the system bell instead of ending in silence. The underlying logic
+(safe-zone first click, neighbour counting, BFS flood fill) is
+completely unchanged.
 """
 
-# ── Imports ───────────────────────────────────────────────────────
-import tkinter as tk
-from tkinter import messagebox, simpledialog
-import random
-import time
-from collections import deque
+# ── Imports ──────────────────────────────────────────────────────
+import tkinter as tk               # GUI library (windows, buttons, labels)
+from tkinter import messagebox     # popup dialogs
+import random                      # random cat placement
+import time                        # timer
+from collections import deque      # queue for BFS flood fill
 
-# ── Constants ─────────────────────────────────────────────────────
-ROWS         = 10
-COLUMNS      = 10
-TOTAL_MINES  = 10
+# ── Game Settings ─────────────────────────────────────────────────
+ROWS       = 10    # number of rows on the board
+COLS       = 10    # number of columns on the board
+TOTAL_CATS = 10    # how many cats to hide
 
-BG           = "#13132B"
-CELL_HIDDEN  = "#252545"
-CELL_BORDER  = "#32325A"
-CELL_REVEAL  = "#181830"
-CELL_MINE    = "#4A1530"
-CELL_WRONG   = "#3A2A10"
-MINE_FG      = "#E05050"
-TIMER_FG     = "#5090FF"
+# ── Colours (UI — warm, cat-themed palette) ────────────────────────
+BG          = "#FBF1E4"   # window background (cream)
+CELL_HIDDEN = "#F3E4CE"   # unrevealed button colour
+CELL_REVEAL = "#FFFDF8"   # revealed cell colour
+CELL_CAT    = "#C1503F"   # cat cell colour (terracotta)
+TEXT_DARK   = "#2E2620"   # general text colour
 
-NUMBER_COLORS = {
-    1: "#5599FF", 2: "#55DD88", 3: "#FF6655",
-    4: "#AA66FF", 5: "#FFAA44", 6: "#44DDDD",
-    7: "#FF77CC", 8: "#AAAAAA"
+# Number colours 1-8 (cat-tastrophe palette)
+NUM_COLOR = {
+    1: "#3A79B0", 2: "#4C6E3F", 3: "#8F3527", 4: "#5E4B9E",
+    5: "#8F3527", 6: "#2F8F86", 7: "#2E2620", 8: "#7A6C5A"
 }
-CELL_W = 46
-CELL_H = 46
 
 
-# ── Cell Class ────────────────────────────────────────────────────
+# ════════════════════════════════════════════════════════════════
+# CLASS 1: Cell
+# Each square on the board is one Cell object.
+# Cell only stores DATA — no game logic here.
+# ════════════════════════════════════════════════════════════════
 class Cell:
-    """Stores state for one board square. No game logic here."""
+    def __init__(self):
+        self.is_cat           = False  # Boolean: True if a cat is here
+        self.is_revealed      = False  # Boolean: True if player opened this
+        self.is_collared      = False  # Boolean: True if player belled this
+        self.neighbour_count  = 0      # Integer: how many cats are nearby (0-8)
+        self.button           = None   # stores the tkinter Button widget
+
+
+# ════════════════════════════════════════════════════════════════
+# CLASS 2: CatstropheGame
+# Controls everything: the board, clicks, cats, timer, win/lose.
+# ════════════════════════════════════════════════════════════════
+class CatstropheGame:
 
     def __init__(self):
-        self.is_mine         = False
-        self.is_revealed     = False
-        self.is_flagged      = False
-        self.neighbour_count = 0
-        self.canvas          = None
-
-
-# ── MinesweeperGame Class ─────────────────────────────────────────
-class MinesweeperGame:
-    """Controls the entire game: UI, logic, timer, leaderboard."""
-
-    def __init__(self):
+        # ── Create the window ────────────────────────────────────
         self.window = tk.Tk()
-        self.window.title("Minesweeper")
+        self.window.title("Cat-tastrophe — Boolean Algebra Edition")
         self.window.configure(bg=BG)
-        self.first_click   = True
-        self.game_over     = False
-        self.game_won      = False
-        self.start_time    = None
-        self.leaderboard   = []
-        self.board         = []
-        self.timer_var     = tk.StringVar(value="0s")
-        self.mine_var      = tk.StringVar(value=str(TOTAL_MINES))
-        self._build_interface()
+        self.window.resizable(False, False)
+
+        # ── Game state variables (all boolean or simple types) ───
+        self.first_click = True   # Boolean: True until first click happens
+        self.game_over   = False  # Boolean: True when game ends
+        self.start_time  = None   # stores time.time() on first click
+        self.board        = []    # 2D list of Cell objects [row][col]
+
+        # ── Build UI then board ──────────────────────────────────
+        self._build_ui()
         self._build_board()
-        self.connect_buttons()
-        self.update_timer()
 
+    # ─────────────────────────────────────────────────────────────
+    # BUILD UI
+    # Creates the title, status labels, and board frame.
+    # UI styling done with AI help — focus is on the logic below.
+    # ─────────────────────────────────────────────────────────────
+    def _build_ui(self):
+        # Title label
+        tk.Label(
+            self.window,
+            text="🐾  Cat-tastrophe",
+            font=("Segoe UI", 20, "bold"),
+            bg=BG, fg="#B35F26"
+        ).pack(pady=(20, 2))
+
+        tk.Label(
+            self.window,
+            text="Built on Boolean Algebra — CIA-1",
+            font=("Segoe UI", 9),
+            bg=BG, fg="#7A6C5A"
+        ).pack()
+
+        # Status bar: cat count | message | timer
+        bar = tk.Frame(self.window, bg=BG)
+        bar.pack(pady=12)
+
+        self.cat_label = tk.Label(bar, text=f"🐱 {TOTAL_CATS}",
+                                   font=("Segoe UI", 13, "bold"),
+                                   bg=BG, fg="#C1503F")
+        self.cat_label.pack(side="left", padx=15)
+
+        self.status_label = tk.Label(bar, text="Left-click: pet  |  Right-click: bell a suspect",
+                                     font=("Segoe UI", 10),
+                                     bg=BG, fg="#7A6C5A")
+        self.status_label.pack(side="left", padx=20)
+
+        self.timer_label = tk.Label(bar, text="⏱ 0s",
+                                    font=("Segoe UI", 13, "bold"),
+                                    bg=BG, fg="#4C6E3F")
+        self.timer_label.pack(side="left", padx=15)
+
+        # New Game button
+        tk.Button(
+            self.window, text="🐾  New Game",
+            font=("Segoe UI", 10),
+            bg="#F3E4CE", fg=TEXT_DARK,
+            relief="flat", padx=12, pady=5,
+            cursor="hand2",
+            command=self.new_game
+        ).pack(pady=(0, 12))
+
+        # Board frame — grid of buttons goes here
+        self.board_frame = tk.Frame(self.window, bg="#E7D8C1", padx=3, pady=3)
+        self.board_frame.pack(padx=20, pady=(0, 20))
+
+    # ─────────────────────────────────────────────────────────────
+    # BUILD BOARD
+    # Creates a 10x10 grid of Cell objects.
+    # Each Cell gets a tkinter Button widget.
+    # ─────────────────────────────────────────────────────────────
     def _build_board(self):
-        """Creates 10x10 Cell objects, each drawn on a Canvas."""
-        self.board = []
+        self.board = []   # start with empty board list
+
         for row in range(ROWS):
-            row_list = []
-            for col in range(COLUMNS):
+            row_list = []   # one list per row
+            for col in range(COLS):
+
+                # Create a Cell object for this square
                 cell = Cell()
-                cv = tk.Canvas(self.board_frame,
-                    width=CELL_W, height=CELL_H,
-                    bg=CELL_HIDDEN, cursor="hand2")
-                cv.grid(row=row, column=col, padx=2, pady=2)
-                cell.canvas = cv
-                row_list.append(cell)
-            self.board.append(row_list)
 
-    def connect_buttons(self):
-        """Binds left/right click to every cell canvas."""
-        for row in range(ROWS):
-            for col in range(COLUMNS):
-                cv = self.board[row][col].canvas
-                cv.bind("<Button-1>",
-                    lambda e, r=row, c=col: self.left_click(r, c))
-                cv.bind("<Button-3>",
-                    lambda e, r=row, c=col: self.right_click(e, r, c))
+                # Create a Button widget and attach it to the cell
+                btn = tk.Button(
+                    self.board_frame,
+                    width=3, height=1,
+                    bg=CELL_HIDDEN,
+                    fg=TEXT_DARK,
+                    font=("Segoe UI", 11, "bold"),
+                    relief="raised",
+                    bd=1,
+                    cursor="hand2"
+                )
+                # Place button in the grid at this row and column
+                btn.grid(row=row, column=col, padx=1, pady=1)
 
-    def get_neighbours(self, row, col):
-        """Returns valid (row, col) pairs for up to 8 neighbours."""
-        neighbours = []
-        for dr in [-1, 0, 1]:
-            for dc in [-1, 0, 1]:
-                if dr == 0 and dc == 0:
-                    continue
-                nr, nc = row + dr, col + dc
-                if 0 <= nr < ROWS and 0 <= nc < COLUMNS:
-                    neighbours.append((nr, nc))
-        return neighbours
-
-    def place_mines(self, first_row, first_col):
-        """Places mines. Boolean: NOT safe_zone AND NOT already_mine."""
-        safe = {(first_row, first_col)}
-        for pos in self.get_neighbours(first_row, first_col):
-            safe.add(pos)
-        placed = 0
-        while placed < TOTAL_MINES:
-            r = random.randint(0, ROWS - 1)
-            c = random.randint(0, COLUMNS - 1)
-            if (r, c) not in safe and not self.board[r][c].is_mine:
-                self.board[r][c].is_mine = True
-                placed += 1
-        self.calculate_neighbour_numbers()
-
-    def calculate_neighbour_numbers(self):
-        """Counts adjacent mines for every safe cell."""
-        for row in range(ROWS):
-            for col in range(COLUMNS):
-                cell = self.board[row][col]
-                if cell.is_mine:
-                    continue
-                cell.neighbour_count = sum(
-                    1 for nr, nc in self.get_neighbours(row, col)
-                    if self.board[nr][nc].is_mine
+                # Left click → reveal this cell
+                btn.configure(
+                    command=lambda r=row, c=col: self.left_click(r, c)
+                )
+                # Right click → bell this cell
+                btn.bind(
+                    "<Button-3>",
+                    lambda e, r=row, c=col: self.right_click(r, c)
                 )
 
-    def reveal_cell(self, row, col):
-        """Reveals one cell. Boolean: NOT revealed AND NOT flagged."""
-        cell = self.board[row][col]
-        # Boolean guard
-        if cell.is_revealed or cell.is_flagged:
-            return
-        if self.first_click:
-            self.first_click = False
-            self.place_mines(row, col)
-            self.start_time = time.time()
-            cell = self.board[row][col]
-        cell.is_revealed = True
-        if cell.is_mine:
-            # Boolean: is_mine = True → game over
-            self.game_over = True
-            self.reveal_all_mines()
-            return
-        if cell.neighbour_count == 0:
-            self.flood_fill(row, col)
-        self.check_win()
+                # Save button reference inside the Cell
+                cell.button = btn
+                row_list.append(cell)
 
-    def flood_fill(self, start_row, start_col):
-        """BFS: auto-reveals connected empty region."""
-        queue = deque([(start_row, start_col)])
-        while queue:
-            row, col = queue.popleft()
-            for nr, nc in self.get_neighbours(row, col):
-                cell = self.board[nr][nc]
-                # Boolean: NOT revealed AND NOT flagged AND NOT mine
-                if not cell.is_revealed and not cell.is_flagged and not cell.is_mine:
-                    cell.is_revealed = True
-                    self._draw_cell(nr, nc)
-                    if cell.neighbour_count == 0:
-                        queue.append((nr, nc))
+            self.board.append(row_list)
 
-    def toggle_flag(self, row, col):
-        """Places or removes flag. Boolean: only if NOT revealed."""
-        cell = self.board[row][col]
-        if cell.is_revealed:   # Boolean: NOT revealed required
-            return
-        cell.is_flagged = not cell.is_flagged
-        self._draw_cell(row, col)
+    # ─────────────────────────────────────────────────────────────
+    # NEW GAME
+    # Resets the entire board back to starting state.
+    # Boolean: first_click = True means cats not placed yet.
+    # ─────────────────────────────────────────────────────────────
+    def new_game(self):
+        self.first_click = True    # Boolean reset
+        self.game_over   = False   # Boolean reset
+        self.start_time  = None
 
-    def check_win(self):
-        """Win if all safe cells revealed. Boolean: NOT mine AND revealed."""
-        total_safe    = ROWS * COLUMNS - TOTAL_MINES
-        revealed_safe = sum(
-            1 for r in range(ROWS) for c in range(COLUMNS)
-            if not self.board[r][c].is_mine and self.board[r][c].is_revealed
-        )
-        if revealed_safe == total_safe:
-            self.game_over = True
-            self.game_won  = True
+        self.status_label.config(text="Left-click: pet  |  Right-click: bell a suspect")
+        self.cat_label.config(text=f"🐱 {TOTAL_CATS}")
+        self.timer_label.config(text="⏱ 0s")
 
+        # Reset every cell back to its starting state
+        for row in range(ROWS):
+            for col in range(COLS):
+                cell = self.board[row][col]
+                cell.is_cat           = False   # Boolean reset
+                cell.is_revealed      = False   # Boolean reset
+                cell.is_collared      = False   # Boolean reset
+                cell.neighbour_count  = 0
+
+                # Reset button appearance
+                cell.button.config(
+                    text="", bg=CELL_HIDDEN,
+                    fg=TEXT_DARK, relief="raised",
+                    state="normal"
+                )
+
+    # ─────────────────────────────────────────────────────────────
+    # GET NEIGHBOURS
+    # Returns a list of valid (row, col) positions surrounding
+    # the given cell. Up to 8 neighbours; fewer on edges/corners.
+    # ─────────────────────────────────────────────────────────────
+    def get_neighbours(self, row, col):
+        neighbours = []
+
+        for dr in [-1, 0, 1]:       # row offset: above, same, below
+            for dc in [-1, 0, 1]:   # col offset: left, same, right
+
+                if dr == 0 and dc == 0:
+                    continue        # skip the cell itself
+
+                nr = row + dr       # neighbour row
+                nc = col + dc       # neighbour column
+
+                # Only add if inside the board boundaries
+                if 0 <= nr < ROWS and 0 <= nc < COLS:
+                    neighbours.append((nr, nc))
+
+        return neighbours
+
+    # ─────────────────────────────────────────────────────────────
+    # PLACE CATS
+    # Called once on the first click.
+    # Boolean rule: place a cat only if NOT in safe zone AND NOT already a cat.
+    # Safe zone = clicked cell + all its neighbours (guaranteed safe start).
+    # ─────────────────────────────────────────────────────────────
+    def place_cats(self, first_row, first_col):
+        # Build the safe zone — cats never go here
+        safe_zone = set()
+        safe_zone.add((first_row, first_col))
+        for pos in self.get_neighbours(first_row, first_col):
+            safe_zone.add(pos)
+
+        # Place cats one by one until we have TOTAL_CATS
+        cats_placed = 0
+        while cats_placed < TOTAL_CATS:
+            r = random.randint(0, ROWS - 1)
+            c = random.randint(0, COLS - 1)
+
+            # Boolean: NOT in safe zone AND NOT already a cat
+            not_safe = (r, c) not in safe_zone
+            not_cat  = not self.board[r][c].is_cat
+
+            if not_safe and not_cat:
+                self.board[r][c].is_cat = True
+                cats_placed += 1
+
+        # After placing all cats, calculate numbers for every safe cell
+        self.calculate_numbers()
+
+    # ─────────────────────────────────────────────────────────────
+    # CALCULATE NUMBERS
+    # For every non-cat cell, count how many cats are nearby.
+    # Stores the result in cell.neighbour_count (0-8).
+    # ─────────────────────────────────────────────────────────────
+    def calculate_numbers(self):
+        for row in range(ROWS):
+            for col in range(COLS):
+                cell = self.board[row][col]
+
+                if cell.is_cat:
+                    continue   # cats don't need a number
+
+                count = 0
+                for nr, nc in self.get_neighbours(row, col):
+                    if self.board[nr][nc].is_cat:
+                        count += 1
+
+                cell.neighbour_count = count
+
+    # ─────────────────────────────────────────────────────────────
+    # LEFT CLICK HANDLER
+    # Boolean: only do anything if NOT game_over.
+    # ─────────────────────────────────────────────────────────────
     def left_click(self, row, col):
-        """Boolean: accept only if NOT game_over."""
-        if not self.game_over:
+        if not self.game_over:        # Boolean: NOT game_over
             self.reveal_cell(row, col)
 
-    def right_click(self, event, row, col):
-        """Boolean: accept only if NOT game_over."""
-        if not self.game_over:
-            self.toggle_flag(row, col)
+    # ─────────────────────────────────────────────────────────────
+    # RIGHT CLICK HANDLER
+    # Boolean: only do anything if NOT game_over.
+    # ─────────────────────────────────────────────────────────────
+    def right_click(self, row, col):
+        if not self.game_over:        # Boolean: NOT game_over
+            self.toggle_collar(row, col)
 
+    # ─────────────────────────────────────────────────────────────
+    # REVEAL CELL  ← most important function
+    # Opens a cell when left-clicked.
+    # Boolean rules:
+    #   - Skip if already revealed:  is_revealed == True
+    #   - Skip if collared:          is_collared == True
+    #   - Game over if a cat:        is_cat      == True
+    # ─────────────────────────────────────────────────────────────
+    def reveal_cell(self, row, col):
+        cell = self.board[row][col]
+
+        # Boolean guard: skip if already revealed OR collared
+        if cell.is_revealed or cell.is_collared:
+            return
+
+        # First click: place cats now (safe zone around this click)
+        if self.first_click:
+            self.first_click = False          # Boolean: flip to False
+            self.place_cats(row, col)
+            self.start_time = time.time()     # start the timer
+            self.update_timer()               # begin ticking
+
+        # Mark this cell as revealed
+        cell.is_revealed = True               # Boolean: set to True
+
+        # ── Case 1: Found a cat → game over ─────────────────────
+        if cell.is_cat:                       # Boolean: is_cat == True
+            cell.button.config(text="🐱", bg=CELL_CAT, relief="sunken")
+            self.game_over = True             # Boolean: set True
+            self.status_label.config(text="🐱 Meow! You found a cat.")
+            self.window.bell()                # plays the system alert sound —
+                                               # swap for playsound("meow.wav")
+                                               # if you have a real meow clip
+            self.show_all_cats()
+            messagebox.showinfo("Meow!", "You found a cat! 🐱")
+            return
+
+        # ── Case 2: Empty cell (0 nearby cats) → flood fill ─────
+        if cell.neighbour_count == 0:
+            cell.button.config(text="", bg=CELL_REVEAL, relief="sunken")
+            self.flood_fill(row, col)         # auto-reveal connected region
+
+        # ── Case 3: Number cell → show the number ───────────────
+        else:
+            num   = cell.neighbour_count
+            color = NUM_COLOR.get(num, TEXT_DARK)
+            cell.button.config(
+                text=str(num), bg=CELL_REVEAL,
+                fg=color, relief="sunken"
+            )
+
+        # After every reveal, check if the player has won
+        self.check_win()
+
+    # ─────────────────────────────────────────────────────────────
+    # FLOOD FILL (BFS)
+    # When an empty cell is revealed, automatically reveals all
+    # connected empty cells using Breadth First Search.
+    #
+    # BFS uses a queue (deque):
+    #   - Add the starting cell to the queue
+    #   - While queue is not empty:
+    #       - Take the next cell from the front
+    #       - Check all its neighbours
+    #       - If neighbour is safe and hidden: reveal it, add to queue
+    #
+    # Boolean rule: add to queue only if NOT revealed AND NOT collared AND NOT a cat
+    # ─────────────────────────────────────────────────────────────
+    def flood_fill(self, start_row, start_col):
+        queue = deque()                       # empty queue to begin
+        queue.append((start_row, start_col))  # add starting cell
+
+        while queue:                          # keep going until queue is empty
+            row, col = queue.popleft()        # take cell from front of queue
+
+            for nr, nc in self.get_neighbours(row, col):
+                cell = self.board[nr][nc]
+
+                # Boolean: NOT revealed AND NOT collared AND NOT a cat
+                if not cell.is_revealed and not cell.is_collared and not cell.is_cat:
+                    cell.is_revealed = True   # Boolean: mark as revealed
+
+                    if cell.neighbour_count == 0:
+                        # Empty cell: reveal blank, add to queue to keep expanding
+                        cell.button.config(text="", bg=CELL_REVEAL, relief="sunken")
+                        queue.append((nr, nc))
+                    else:
+                        # Number cell: reveal number, stop expanding here
+                        num   = cell.neighbour_count
+                        color = NUM_COLOR.get(num, TEXT_DARK)
+                        cell.button.config(
+                            text=str(num), bg=CELL_REVEAL,
+                            fg=color, relief="sunken"
+                        )
+
+    # ─────────────────────────────────────────────────────────────
+    # TOGGLE COLLAR
+    # Places or removes a 🔔 bell on a hidden cell — "belling the cat".
+    # Boolean rule: can only bell if NOT revealed.
+    # ─────────────────────────────────────────────────────────────
+    def toggle_collar(self, row, col):
+        cell = self.board[row][col]
+
+        # Boolean: can only bell if NOT revealed
+        if cell.is_revealed:
+            return
+
+        # Flip is_collared between True and False
+        cell.is_collared = not cell.is_collared   # Boolean toggle
+
+        if cell.is_collared:
+            # Bell was placed
+            cell.button.config(text="🔔", fg="#D65D82")
+        else:
+            # Bell was removed
+            cell.button.config(text="", fg=TEXT_DARK)
+
+        # Update cat counter: TOTAL_CATS minus number of bells placed
+        collars_placed = 0
+        for r in range(ROWS):
+            for c in range(COLS):
+                if self.board[r][c].is_collared:
+                    collars_placed += 1
+
+        remaining = TOTAL_CATS - collars_placed
+        self.cat_label.config(text=f"🐱 {remaining}")
+
+    # ─────────────────────────────────────────────────────────────
+    # SHOW ALL CATS
+    # Reveals every cat when the game is over (player lost).
+    # ─────────────────────────────────────────────────────────────
+    def show_all_cats(self):
+        for row in range(ROWS):
+            for col in range(COLS):
+                cell = self.board[row][col]
+                if cell.is_cat and not cell.is_revealed:
+                    cell.button.config(text="🐱", bg="#8F3527")
+
+    # ─────────────────────────────────────────────────────────────
+    # CHECK WIN
+    # Win condition: every safe cell is revealed.
+    # Boolean rule: count a cell toward win only if NOT a cat AND is_revealed.
+    # Total safe cells = ROWS × COLS − TOTAL_CATS = 90
+    # ─────────────────────────────────────────────────────────────
+    def check_win(self):
+        total_safe    = ROWS * COLS - TOTAL_CATS  # = 90
+        revealed_safe = 0
+
+        for row in range(ROWS):
+            for col in range(COLS):
+                cell = self.board[row][col]
+                # Boolean: count only if NOT a cat AND is_revealed
+                if not cell.is_cat and cell.is_revealed:
+                    revealed_safe += 1
+
+        if revealed_safe == total_safe:
+            self.game_over = True             # Boolean: game ends
+            self.status_label.config(text="🐾 You out-smarted every cat!")
+            messagebox.showinfo("You Won! 🐾", "Every cat found a home. Well done.")
+
+    # ─────────────────────────────────────────────────────────────
+    # UPDATE TIMER
+    # Ticks every 1 second using window.after().
+    # window.after(1000, func) calls func after 1000ms WITHOUT
+    # freezing the window (unlike time.sleep which would freeze it).
+    # Boolean: only tick if NOT game_over AND game has started.
+    # ─────────────────────────────────────────────────────────────
     def update_timer(self):
-        """Self-scheduling timer. Boolean: NOT game_over AND start_time set."""
+        # Boolean: NOT game_over AND start_time is set
         if not self.game_over and self.start_time is not None:
             elapsed = int(time.time() - self.start_time)
-            self.timer_var.set(f"{elapsed}s")
-        if not self.game_over:
+            self.timer_label.config(text=f"⏱ {elapsed}s")
+            # Schedule this function to run again after 1 second
             self.window.after(1000, self.update_timer)
 
 
-# ── Entry Point ───────────────────────────────────────────────────
-game = MinesweeperGame()
+# ── Entry Point ──────────────────────────────────────────────────
+# Create the game object (runs __init__ → builds everything)
+# Then start the tkinter event loop (waits for mouse clicks)
+game = CatstropheGame()
 game.window.mainloop()`;
 
 // Section anchors: line number → anchor id
 const SRC_ANCHORS={
   1:'src-imports',
-  15:'src-imports',
-  22:'src-constants',
+  21:'src-imports',
+  28:'src-constants',
   52:'src-cell',
   65:'src-game',
-  66:'src-game',
-  109:'src-reveal',
-  130:'src-bfs',
-  143:'src-win',
-  157:'src-entry'
+  67:'src-game',
+  310:'src-reveal',
+  370:'src-bfs',
+  446:'src-win',
+  478:'src-entry'
 };
 
 // Keywords for syntax highlighting
@@ -1942,7 +2323,7 @@ function buildSourceCodeInto(container){
     // anchor ids — prefix for inline vs floating
     const anchorId=SRC_ANCHORS[ln];
     if(anchorId)div.id=(isFloating?'':'il-')+anchorId;
-    if([15,22,52,65,109,130,143,157].includes(ln))div.classList.add('src-section-start');
+    if([21,28,52,65,310,370,446,478].includes(ln))div.classList.add('src-section-start');
     div.innerHTML=`<span class="src-lnum">${ln}</span><span class="src-lcode">${highlightLine(raw)||' '}</span>`;
     div.title=getSectionName(ln);
     div.addEventListener('click',()=>{
@@ -1963,15 +2344,18 @@ function buildSourceCode(){
 }
 
 function getSectionName(ln){
-  if(ln<=13)return'Module docstring';
-  if(ln<=20)return'Imports';
-  if(ln<=51)return'Constants & colour palette';
-  if(ln<=64)return'Cell class';
-  if(ln<=108)return'MinesweeperGame — setup';
-  if(ln<=129)return'reveal_cell()';
-  if(ln<=142)return'flood_fill() — BFS';
-  if(ln<=156)return'check_win() / click handlers';
-  return'Entry point';
+  if(ln<=19)return'Module docstring';
+  if(ln<=27)return'Imports';
+  if(ln<=44)return'Constants & colour palette';
+  if(ln<=58)return'Cell class';
+  if(ln<=241)return'CatstropheGame — setup';
+  if(ln<=289)return'place_cats() / calculate_numbers()';
+  if(ln<=309)return'click handlers';
+  if(ln<=369)return'reveal_cell()';
+  if(ln<=401)return'flood_fill() — BFS';
+  if(ln<=432)return'toggle_collar()';
+  if(ln<=468)return'show_all_cats() / check_win()';
+  return'update_timer() / Entry point';
 }
 
 function jumpToLine(anchorId){
@@ -2090,7 +2474,7 @@ srcPanel.innerHTML=`
     <div style="width:28px;height:28px;background:linear-gradient(135deg,#7B6FFF,#4DA6FF);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0">📄</div>
     <div style="flex:1">
       <div style="font-size:13px;font-weight:600;color:#E8E8FF">Source Code</div>
-      <div style="font-size:10px;color:#5C5C90">minesweeper.py — click any line to ask AI</div>
+      <div style="font-size:10px;color:#5C5C90">catstrophe.py — click any line to ask AI</div>
     </div>
     <button onclick="closeSrcPanel()" style="background:none;border:none;color:#5C5C90;font-size:18px;cursor:pointer;padding:2px 6px;border-radius:4px;line-height:1" title="Close">×</button>
   </div>
@@ -2114,7 +2498,7 @@ srcPanel.innerHTML=`
       <div style="width:10px;height:10px;border-radius:50%;background:#FEBC2E"></div>
       <div style="width:10px;height:10px;border-radius:50%;background:#28C840"></div>
     </div>
-    <span style="font-size:11px;color:#9090C0;font-family:'Cascadia Code',monospace;margin-left:4px">minesweeper.py</span>
+    <span style="font-size:11px;color:#9090C0;font-family:'Cascadia Code',monospace;margin-left:4px">catstrophe.py</span>
     <span id="src-match-info" style="margin-left:auto;font-size:10px;color:#3A3A6A">click any line · ask AI instantly</span>
   </div>
 
@@ -2214,7 +2598,7 @@ async function askAI(userMsg, highlightedText){
   const k2='Gdyb3FYird5VHri7JAJONKwV2lyOzwb';
   const GROQ_API_KEY=k1+k2;
   const groqMessages=[
-    {role:'system',content:`You are an expert tutor explaining a Python Minesweeper game built for a BCA first-year student's CIA-1 assignment at CHRIST University. The game uses two classes (Cell and MinesweeperGame), Boolean algebra guards, BFS flood fill with deque, and Tkinter GUI. 10x10 board, 10 mines, safe first click. Be friendly, use simple analogies, explain WHY not just WHAT. Bold **key terms**, use backticks for variables/functions. Under 200 words. Assume complete beginner.`},
+    {role:'system',content:`You are an expert tutor explaining a Python Cat-tastrophe game built for a BCA first-year student's CIA-1 assignment at CHRIST University. The game uses two classes (Cell and CatstropheGame), Boolean algebra guards, BFS flood fill with deque, and Tkinter GUI. 10x10 board, 10 cats, safe first click. Be friendly, use simple analogies, explain WHY not just WHAT. Bold **key terms**, use backticks for variables/functions. Under 200 words. Assume complete beginner.`},
     ...aiHistory.map(m=>({role:m.role==='assistant'?'assistant':'user',content:m.content})),
     {role:'user',content:userMsg}
   ];
