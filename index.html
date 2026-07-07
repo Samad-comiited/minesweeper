@@ -236,18 +236,39 @@ pre{padding:20px;font-family:var(--font-mono);font-size:13px;line-height:1.8;whi
 /* ── Flow diagram ── */
 .flow-wrap{margin-top:28px;overflow-x:auto}
 .flow{display:flex;flex-direction:column;align-items:center;gap:0;min-width:360px}
-.flow-node{background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:12px 20px;text-align:center;font-size:13px;min-width:200px;position:relative}
+.flow-node{background:var(--surface2);border:2px solid var(--border2);border-radius:10px;padding:12px 20px;text-align:center;font-size:13px;font-weight:600;min-width:200px;position:relative}
 .flow-node.decision{background:rgba(107,66,38,.08);border-color:var(--accent);color:var(--text);clip-path:polygon(50% 0%,100% 50%,50% 100%,0% 50%);padding:20px 40px}
-.flow-node.start{background:rgba(68,221,136,.08);border-color:var(--green);color:var(--green);border-radius:24px}
-.flow-node.end-win{background:rgba(68,221,136,.08);border-color:var(--green);color:var(--green);border-radius:24px}
-.flow-node.end-lose{background:rgba(255,85,102,.08);border-color:var(--red);color:var(--red);border-radius:24px}
-.flow-node.action{background:rgba(77,166,255,.06);border-color:var(--blue)}
+.flow-node.start{background:#0F3D24;border:2.5px solid #00E676;color:#5CFFA3;border-radius:24px}
+.flow-node.end-win{background:#0F3D24;border:2.5px solid #00E676;color:#5CFFA3;border-radius:24px}
+.flow-node.end-lose{background:#3D0F14;border:2.5px solid #FF4D5E;color:#FF9DA8;border-radius:24px}
+.flow-node.action{background:#0B2A45;border:2.5px solid #2F8CFF;color:#8FC4FF}
 .flow-arrow{display:flex;flex-direction:column;align-items:center;color:var(--text3);font-size:11px;gap:2px;margin:2px 0}
 .flow-arrow-line{width:2px;height:18px;background:var(--border2)}
 .flow-arrow-head{color:var(--border2);font-size:14px;margin-top:-4px}
 .flow-label{color:var(--text3);font-size:11px}
 .flow-branch{display:flex;align-items:flex-start;gap:20px;width:100%}
 .flow-branch-col{display:flex;flex-direction:column;align-items:center;flex:1;gap:0}
+
+/* ── Vivid Boolean gate cards (flow chart only — projector friendly) ── */
+.flow-gate{background:#211018;border-radius:14px;padding:14px 18px;text-align:left;min-width:260px;max-width:340px;box-shadow:0 6px 18px rgba(0,0,0,.35);border:2.5px solid}
+.flow-gate.gate-not{border-color:#FF4D5E}
+.flow-gate.gate-and{border-color:#2F8CFF}
+.flow-gate.gate-or{border-color:#FF9D2E}
+.flow-gate.gate-check{border-color:#00D9B5}
+.flow-gate-head{display:flex;align-items:center;gap:6px;margin-bottom:8px;flex-wrap:wrap}
+.flow-gate-badge{display:inline-block;padding:3px 12px;border-radius:20px;font-size:10.5px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:#fff}
+.flow-gate-badge.g-not{background:#FF4D5E}
+.flow-gate-badge.g-and{background:#2F8CFF}
+.flow-gate-badge.g-or{background:#FF9D2E}
+.flow-gate-badge.g-check{background:#00D9B5}
+.flow-gate-fn{font-size:10.5px;color:#FFD98E;font-family:var(--font-mono);font-weight:600}
+.flow-gate-stmt{font-family:var(--font-mono);font-size:12.5px;font-weight:700;color:#FFFFFF;margin-bottom:10px;line-height:1.55}
+.flow-gate-stmt .k{color:#FF8FA3}
+.flow-gate-branches{display:flex;gap:8px;flex-wrap:wrap}
+.flow-pill{display:inline-flex;align-items:center;gap:5px;padding:5px 11px;border-radius:8px;font-size:11.5px;font-weight:800;line-height:1.3}
+.flow-pill.true{background:#00E676;color:#00330f}
+.flow-pill.false{background:#FF5C5C;color:#3d0000}
+.flow-pill span.res{font-weight:500;margin-left:2px}
 
 /* ── BFS visualiser ── */
 .bfs-grid{display:grid;grid-template-columns:repeat(8,38px);gap:2px;margin:16px 0}
@@ -351,9 +372,7 @@ pre{padding:20px;font-family:var(--font-mono);font-size:13px;line-height:1.8;whi
     <div class="nav-links">
       <a href="#" onclick="event.preventDefault();document.getElementById('what').scrollIntoView({behavior:'smooth'})">What is it</a>
       <a href="#" onclick="event.preventDefault();document.getElementById('demo').scrollIntoView({behavior:'smooth'})">Play it</a>
-      <a href="#" onclick="event.preventDefault();document.getElementById('code').scrollIntoView({behavior:'smooth'})">The code</a>
-      <a href="#" onclick="event.preventDefault();document.getElementById('boolean').scrollIntoView({behavior:'smooth'})">Boolean algebra</a>
-      <a href="#" onclick="event.preventDefault();document.getElementById('bfs').scrollIntoView({behavior:'smooth'})">Flood fill</a>
+      <a href="#" onclick="event.preventDefault();document.getElementById('code').scrollIntoView({behavior:'smooth'})">The code &amp; Boolean logic</a>
       <a href="#" onclick="event.preventDefault();document.getElementById('quiz').scrollIntoView({behavior:'smooth'})">Quiz</a>
     </div>
   </div>
@@ -374,7 +393,6 @@ pre{padding:20px;font-family:var(--font-mono);font-size:13px;line-height:1.8;whi
       <div class="chips" style="margin-top:20px">
         <span class="chip chip-purple">OOP · 2 Classes</span>
         <span class="chip chip-blue">Boolean Algebra · 7 rules</span>
-        <span class="chip chip-green">BFS · Flood Fill</span>
         <span class="chip chip-orange">Tkinter GUI</span>
       </div>
     </div>
@@ -425,7 +443,7 @@ pre{padding:20px;font-family:var(--font-mono);font-size:13px;line-height:1.8;whi
     <div class="card">
       <div class="card-icon">⚡</div>
       <h3>The flood fill shortcut</h3>
-      <p>When you reveal an empty square (shows nothing, no cats nearby), the game automatically opens all connected empty squares — sometimes revealing a huge area at once. This uses a BFS algorithm.</p>
+      <p>When you reveal an empty square (shows nothing, no cats nearby), the game automatically opens all connected empty squares — sometimes revealing a huge area at once.</p>
     </div>
   </div>
 </section>
@@ -474,238 +492,226 @@ pre{padding:20px;font-family:var(--font-mono);font-size:13px;line-height:1.8;whi
 <!-- ── CODE WALKTHROUGH ── -->
 <section id="code" class="section">
   <div class="section-label">Under the hood</div>
-  <h2 class="section-title">How the code is structured</h2>
-  <p class="section-sub">The game is split into two classes and 16 functions. Click any highlighted line to see what it does.</p>
+  <h2 class="section-title">Boolean logic, the game flow, and the code</h2>
+  <p class="section-sub">For the viva: the variables the game tracks, the Boolean logic that guards every decision — where it's used and why — the step-by-step flow, then the full source.</p>
 
   <div class="tab-bar" id="code-tab-bar" style="margin-top:32px">
-    <button class="tab-btn active" onclick="switchTab(this,'tab-classes')">Classes</button>
-    <button class="tab-btn" onclick="switchTab(this,'tab-vars')">Variables</button>
-    <button class="tab-btn" onclick="switchTab(this,'tab-funcs')">Functions</button>
-    <button class="tab-btn" onclick="switchTab(this,'tab-flow')">Game flow</button>
+    <button class="tab-btn active" onclick="switchTab(this,'tab-boolean')">Boolean Logic</button>
+    <button class="tab-btn" onclick="switchTab(this,'tab-flow')">Sequence of Events</button>
     <button class="tab-btn tab-btn-src" onclick="switchTab(this,'tab-source-inline')" style="margin-left:auto;color:var(--accent2);border:1px solid rgba(107,66,38,.3);background:rgba(107,66,38,.08)">{ } Source Code</button>
   </div>
 
-  <!-- CLASSES TAB -->
-  <div id="tab-classes" class="tab-panel active">
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;flex-wrap:wrap">
+  <!-- BOOLEAN LOGIC TAB -->
+  <div id="tab-boolean" class="tab-panel active">
+    <p style="font-size:13px;color:var(--text2);margin-bottom:20px">Boolean algebra has only two values — True and False — and three operations: <strong>NOT</strong> (flips it), <strong>AND</strong> (both must be true), <strong>OR</strong> (either is true). This game uses all three to decide, at every single step, what's allowed to happen next.</p>
+
+    <div class="callout callout-info" style="margin-bottom:24px">
+      <span class="callout-icon">📋</span>
+      <span><strong>Meet the variables first —</strong> everything below is just True/False (or a number) switches the code checks before it does anything. There are two groups: one copy of the first four exists <em>per square</em> (100 squares → 100 copies each); the last three exist <em>once</em>, for the whole game.</span>
+    </div>
+
+    <div class="bool-grid" style="grid-template-columns:repeat(auto-fit,minmax(230px,1fr))">
       <div class="card" style="border-color:var(--accent)">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
-          <span style="font-size:22px">📦</span>
-          <div>
-            <div style="font-family:var(--font-mono);font-size:14px;color:var(--accent2);font-weight:600">class Cell</div>
-            <div style="font-size:11px;color:var(--text3)">Data container · 100 instances</div>
-          </div>
-        </div>
-        <p style="font-size:13px;color:var(--text2);line-height:1.65;margin-bottom:12px">A <strong>class</strong> is a template. <code style="font-size:11px;color:var(--accent2)">Cell</code> is a template for one board square. The game creates 100 copies — one per square. Each copy is called an <strong>instance</strong> and stores its own data.</p>
-        <div class="tl-code">class Cell:
-    is_cat         = False  # cat hiding here?
-    is_revealed     = False  # has player opened it?
-    is_collared      = False  # player put a collar here?
-    neighbour_count = 0      # how many cats nearby?
-    button          = None   # the button widget</div>
-        <div class="callout callout-info" style="margin-top:12px"><span class="callout-icon">💡</span><span>No logic here — Cell only stores facts. Think of it as a sticky note attached to each square.</span></div>
+        <div style="font-family:var(--font-mono);font-size:13px;color:var(--accent2);font-weight:600;margin-bottom:6px">is_cat</div>
+        <div style="font-size:12px;color:var(--text2);line-height:1.6">True/False. Is a cat hiding under <em>this</em> square? Starts False for all — set True for 10 random squares right after your first click.</div>
+      </div>
+      <div class="card" style="border-color:var(--accent)">
+        <div style="font-family:var(--font-mono);font-size:13px;color:var(--accent2);font-weight:600;margin-bottom:6px">is_revealed</div>
+        <div style="font-size:12px;color:var(--text2);line-height:1.6">True/False. Has this square already been opened? Starts False, flips to True the moment it's revealed and never flips back.</div>
+      </div>
+      <div class="card" style="border-color:var(--accent)">
+        <div style="font-family:var(--font-mono);font-size:13px;color:var(--accent2);font-weight:600;margin-bottom:6px">is_collared</div>
+        <div style="font-size:12px;color:var(--text2);line-height:1.6">True/False. Has the player flagged this square as a suspected cat? Starts False, flips on each right-click.</div>
+      </div>
+      <div class="card" style="border-color:var(--accent)">
+        <div style="font-family:var(--font-mono);font-size:13px;color:var(--accent2);font-weight:600;margin-bottom:6px">neighbour_count</div>
+        <div style="font-size:12px;color:var(--text2);line-height:1.6">A number, 0–8. How many of this square's 8 surrounding squares contain a cat. This is the number you see when you open a square.</div>
       </div>
       <div class="card" style="border-color:var(--blue)">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
-          <span style="font-size:22px">🎮</span>
-          <div>
-            <div style="font-family:var(--font-mono);font-size:14px;color:var(--blue);font-weight:600">class CatstropheGame</div>
-            <div style="font-size:11px;color:var(--text3)">Brain of the game · 1 instance</div>
-          </div>
-        </div>
-        <p style="font-size:13px;color:var(--text2);line-height:1.65;margin-bottom:12px">This class does everything: draws the window, handles clicks, places cats, runs the timer, and decides if you've won or lost. Only one instance is ever created — <code style="font-size:11px;color:var(--accent2)">game = CatstropheGame()</code>.</p>
-        <div class="tl-code">class CatstropheGame:
-    board      = []     # 10×10 grid of Cell objects
-    game_over  = False  # are clicks disabled?
-    first_click= True   # has first click happened?
-    start_time = None   # when did the game start?
-    # ... + 15 methods</div>
-        <div class="callout callout-tip" style="margin-top:12px"><span class="callout-icon">✅</span><span>All logic lives here. When you click a button, CatstropheGame decides what to do with it.</span></div>
+        <div style="font-family:var(--font-mono);font-size:13px;color:var(--blue);font-weight:600;margin-bottom:6px">game_over</div>
+        <div style="font-size:12px;color:var(--text2);line-height:1.6">True/False, whole-game switch. Starts False. Turns True the moment you either win or click a cat — every click is ignored once this is True.</div>
+      </div>
+      <div class="card" style="border-color:var(--blue)">
+        <div style="font-family:var(--font-mono);font-size:13px;color:var(--blue);font-weight:600;margin-bottom:6px">first_click</div>
+        <div style="font-size:12px;color:var(--text2);line-height:1.6">True/False, whole-game switch. Starts True. Flips to False right after your very first click — that's the signal to go place the 10 cats.</div>
+      </div>
+      <div class="card" style="border-color:var(--blue)">
+        <div style="font-family:var(--font-mono);font-size:13px;color:var(--blue);font-weight:600;margin-bottom:6px">start_time</div>
+        <div style="font-size:12px;color:var(--text2);line-height:1.6">Starts empty (None). Set to the current time on your first click, so the on-screen timer knows when to start counting from.</div>
       </div>
     </div>
 
-    <div class="callout callout-info" style="margin-top:20px"><span class="callout-icon">🔗</span><span><strong>How they connect:</strong> CatstropheGame creates 100 Cell objects and stores them in <code style="font-size:11px">self.board[row][col]</code>. To check if square (3,4) is a cat: <code style="font-size:11px">self.board[3][4].is_cat</code>. That's it — read the Cell's variable.</span></div>
-  </div>
+    <h3 style="font-size:16px;font-weight:600;margin:32px 0 6px;color:var(--text)">The three operations</h3>
 
-  <!-- VARS TAB -->
-  <div id="tab-vars" class="tab-panel">
-    <h3 style="font-size:14px;font-weight:600;margin-bottom:4px;color:var(--text)">Cell variables</h3>
-    <p style="font-size:13px;color:var(--text2);margin-bottom:12px">Every Cell instance has these 5 variables. Each of the 100 cells has its own copy.</p>
-    <table class="var-table">
-      <tr><th>Variable</th><th>Type</th><th>What it stores</th><th>Changes when</th></tr>
-      <tr><td><span class="var-name">is_cat</span></td><td><span class="var-type type-bool">bool</span></td><td>True if a cat is hidden in this square</td><td>place_cats() runs after first click</td></tr>
-      <tr><td><span class="var-name">is_revealed</span></td><td><span class="var-type type-bool">bool</span></td><td>True once the player opens this square</td><td>reveal_cell() or flood_fill() runs</td></tr>
-      <tr><td><span class="var-name">is_collared</span></td><td><span class="var-type type-bool">bool</span></td><td>True when player right-clicks to collar it</td><td>toggle_collar() runs</td></tr>
-      <tr><td><span class="var-name">neighbour_count</span></td><td><span class="var-type type-int">int</span></td><td>0–8: how many of the 8 surrounding squares are cats</td><td>calculate_numbers() after cats placed</td></tr>
-      <tr><td><span class="var-name">button</span></td><td><span class="var-type type-str">Widget</span></td><td>The actual drawn button on screen</td><td>_build_board() on startup</td></tr>
-    </table>
-
-    <h3 style="font-size:14px;font-weight:600;margin:24px 0 4px;color:var(--text)">CatstropheGame variables (state)</h3>
-    <p style="font-size:13px;color:var(--text2);margin-bottom:12px">These track the game's "memory" — what's currently happening.</p>
-    <table class="var-table">
-      <tr><th>Variable</th><th>Type</th><th>Starts as</th><th>Meaning</th></tr>
-      <tr><td><span class="var-name">self.board</span></td><td><span class="var-type type-list">list[list]</span></td><td><code>[]</code></td><td>2D grid: board[row][col] gives you a Cell object</td></tr>
-      <tr><td><span class="var-name">self.first_click</span></td><td><span class="var-type type-bool">bool</span></td><td><code>True</code></td><td>True until first click — delays cat placement for safe start</td></tr>
-      <tr><td><span class="var-name">self.game_over</span></td><td><span class="var-type type-bool">bool</span></td><td><code>False</code></td><td>Becomes True when you win or lose — disables all clicks</td></tr>
-      <tr><td><span class="var-name">self.start_time</span></td><td><span class="var-type type-float">float</span></td><td><code>None</code></td><td>Unix timestamp of first click. time.time() − start_time = elapsed seconds</td></tr>
-      <tr><td><span class="var-name">self.cat_label</span></td><td><span class="var-type type-str">Label</span></td><td><code>"🐱 10"</code></td><td>Remaining cats display — updated via .config(text=...) as collars are placed</td></tr>
-      <tr><td><span class="var-name">self.timer_label</span></td><td><span class="var-type type-str">Label</span></td><td><code>"⏱ 0s"</code></td><td>Elapsed-time display — updated via .config(text=...) every tick</td></tr>
-      <tr><td><span class="var-name">self.status_label</span></td><td><span class="var-type type-str">Label</span></td><td><code>"Left-click: reveal | Right-click: collar"</code></td><td>Shows instructions, then win/loss messages</td></tr>
-    </table>
-  </div>
-
-  <!-- FUNCTIONS TAB -->
-  <div id="tab-funcs" class="tab-panel">
-    <div class="timeline">
-
-      <div class="tl-item">
-        <div class="tl-dot" style="border-color:var(--green)"></div>
-        <div class="tl-title">__init__() <span style="font-size:11px;font-weight:400;color:var(--text3)">— runs once on startup</span></div>
-        <div class="tl-body">The constructor. Runs automatically when you do <code style="font-size:11px;color:var(--accent2)">game = CatstropheGame()</code>. Creates the window, sets all variables to their starting values, then calls every setup function.</div>
-        <div class="tl-code">self.first_click = True   # no cats placed yet
-self.game_over   = False  # clicks are enabled
-self.board       = []     # empty — filled by _build_board()
-self._build_ui()          # draw title, labels, New Game button
-self._build_board()       # create 100 Cell objects + buttons</div>
+    <div class="bool-grid">
+      <div class="bool-card not">
+        <div class="bool-op">NOT</div>
+        <div class="bool-title">NOT — flips the value</div>
+        <div class="bool-desc">NOT True = False, NOT False = True. In Python: <code style="font-size:11px">not x</code></div>
+        <table class="truth-table">
+          <tr><th>Input</th><th>NOT Input</th></tr>
+          <tr><td class="T">True</td><td class="F">False</td></tr>
+          <tr><td class="F">False</td><td class="T">True</td></tr>
+        </table>
+        <div style="font-family:var(--font-mono);font-size:11px;color:var(--accent2);margin-top:10px;line-height:1.8">Game use:<br>if not cell.is_revealed: ...</div>
       </div>
-
-      <div class="tl-item">
-        <div class="tl-dot" style="border-color:var(--blue)"></div>
-        <div class="tl-title">_build_board() <span style="font-size:11px;font-weight:400;color:var(--text3)">— creates the grid</span></div>
-        <div class="tl-body">Uses two nested for loops (row 0→9, col 0→9) to create 100 Cell objects. Each Cell gets a Button widget (the clickable square), and its left/right-click handlers are wired up right here — no separate "connect" step needed.</div>
-        <div class="tl-code">for row in range(10):        # 0,1,2...9
-    for col in range(10):    # 0,1,2...9
-        cell = Cell()               # make a new cell
-        cell.button = Button(...)   # attach a clickable button
-        btn.configure(command=lambda r=row,c=col: self.left_click(r,c))
-        btn.bind("&lt;Button-3&gt;", lambda e,r=row,c=col: self.right_click(r,c))
-        self.board[row][col] = cell</div>
+      <div class="bool-card and">
+        <div class="bool-op">AND</div>
+        <div class="bool-title">AND — both must be true</div>
+        <div class="bool-desc">Only True if both sides are True. In Python: <code style="font-size:11px">x and y</code></div>
+        <table class="truth-table">
+          <tr><th>A</th><th>B</th><th>A AND B</th></tr>
+          <tr><td class="T">T</td><td class="T">T</td><td class="T">True</td></tr>
+          <tr><td class="T">T</td><td class="F">F</td><td class="F">False</td></tr>
+          <tr><td class="F">F</td><td class="T">T</td><td class="F">False</td></tr>
+          <tr><td class="F">F</td><td class="F">F</td><td class="F">False</td></tr>
+        </table>
+        <div style="font-family:var(--font-mono);font-size:11px;color:var(--accent2);margin-top:10px;line-height:1.8">Game use:<br>if not revealed and not collared: ...</div>
       </div>
-
-      <div class="tl-item">
-        <div class="tl-dot" style="border-color:var(--orange)"></div>
-        <div class="tl-title">place_cats(first_row, first_col) <span style="font-size:11px;font-weight:400;color:var(--text3)">— called on first click</span></div>
-        <div class="tl-body">Randomly places 10 cats, but never in the "safe zone" (first-clicked cell + its 8 neighbours). Uses a while loop that keeps picking random positions until 10 valid ones are found. <strong>Boolean rule:</strong> place cat only if NOT safe AND NOT already a cat.</div>
-        <div class="tl-code">safe = {(first_row, first_col)}   # first click is safe
-safe += get_neighbours(first_row, first_col)  # so are neighbours
-while placed &lt; 10:
-    r, c = random.randint(0,9), random.randint(0,9)
-    if (r,c) not in safe and NOT board[r][c].is_cat:
-        board[r][c].is_cat = True
-        placed += 1</div>
+      <div class="bool-card or">
+        <div class="bool-op">OR</div>
+        <div class="bool-title">OR — at least one true</div>
+        <div class="bool-desc">True if either side is True. In Python: <code style="font-size:11px">x or y</code></div>
+        <table class="truth-table">
+          <tr><th>A</th><th>B</th><th>A OR B</th></tr>
+          <tr><td class="T">T</td><td class="T">T</td><td class="T">True</td></tr>
+          <tr><td class="T">T</td><td class="F">F</td><td class="T">True</td></tr>
+          <tr><td class="F">F</td><td class="T">T</td><td class="T">True</td></tr>
+          <tr><td class="F">F</td><td class="F">F</td><td class="F">False</td></tr>
+        </table>
+        <div style="font-family:var(--font-mono);font-size:11px;color:var(--accent2);margin-top:10px;line-height:1.8">Game use:<br>if revealed or collared: return</div>
       </div>
-
-      <div class="tl-item">
-        <div class="tl-dot" style="border-color:var(--accent)"></div>
-        <div class="tl-title">get_neighbours(row, col) <span style="font-size:11px;font-weight:400;color:var(--text3)">— finds surrounding squares</span></div>
-        <div class="tl-body">Returns up to 8 (row, col) pairs for the squares surrounding a given square. Edge/corner squares return fewer because some positions fall outside the board. Used by many other functions.</div>
-        <div class="tl-code">for dr in [-1, 0, 1]:   # row offset: above, same, below
-    for dc in [-1, 0, 1]: # col offset: left, same, right
-        if dr==0 and dc==0: continue  # skip the square itself
-        if 0 &lt;= row+dr &lt; 10 and 0 &lt;= col+dc &lt; 10:
-            neighbours.append((row+dr, col+dc))</div>
+      <div class="bool-card xor">
+        <div class="bool-op">NOT (toggle)</div>
+        <div class="bool-title">Toggle — flip a boolean</div>
+        <div class="bool-desc">Setting a variable to NOT itself flips it. This is how collaring works — one right-click sets it, the next undoes it.</div>
+        <table class="truth-table">
+          <tr><th>Before</th><th>After toggle</th></tr>
+          <tr><td class="F">False</td><td class="T">True</td></tr>
+          <tr><td class="T">True</td><td class="F">False</td></tr>
+        </table>
+        <div style="font-family:var(--font-mono);font-size:11px;color:var(--accent2);margin-top:10px;line-height:1.8">Game use:<br>is_collared = not is_collared</div>
       </div>
+    </div>
 
-      <div class="tl-item">
-        <div class="tl-dot" style="border-color:var(--red)"></div>
-        <div class="tl-title">reveal_cell(row, col) <span style="font-size:11px;font-weight:400;color:var(--text3)">— the most important function</span></div>
-        <div class="tl-body">Called every time you left-click. Applies boolean checks, handles first click, cat hits, flood fill, and win check. This is the heart of the game.</div>
-        <div class="tl-code">if cell.is_revealed OR cell.is_collared: return  # Boolean guard
-if first_click:
-    place_cats(row, col)   # safe zone around this click
-    start_time = time.time()
-cell.is_revealed = True
-if cell.is_cat:    # hit a cat!
-    game_over = True; show_all_cats()
-elif cell.neighbour_count == 0:
-    flood_fill(row, col)    # auto-open neighbours
-check_win()</div>
+    <h3 style="font-size:16px;font-weight:600;margin:32px 0 6px;color:var(--text)">Where each rule is used, and why</h3>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:16px">Same order as a real game: click accepted → cats placed → cell revealed → collar toggled → neighbours auto-opened → win checked → timer ticks.</p>
+
+    <div class="bool-rule"><div class="bool-icon">🖱️</div><div>
+      <div class="bool-rule-code">accept_click = <span style="color:var(--red)">NOT</span> game_over</div>
+      <div class="bool-rule-desc"><strong>Where:</strong> the very first thing checked on any click, anywhere on the board.<br><strong>Why:</strong> once <code>game_over</code> is True (you won or lost), every further click must do nothing — otherwise you could keep playing a finished board.</div>
+    </div></div>
+
+    <div class="bool-rule"><div class="bool-icon">🐱</div><div>
+      <div class="bool-rule-code">can_place_cat = <span style="color:var(--red)">NOT</span> in_safe_zone <span style="color:var(--blue)">AND</span> <span style="color:var(--red)">NOT</span> already_cat</div>
+      <div class="bool-rule-desc"><strong>Where:</strong> right after your first click, while placing the 10 cats.<br><strong>Why:</strong> a cat must never land in your "safe zone" (the square you clicked + its 8 neighbours) AND must never double-stack on a square that already got a cat — both have to be true (as NOTs) before a cat is placed.</div>
+    </div></div>
+
+    <div class="bool-rule"><div class="bool-icon">👁️</div><div>
+      <div class="bool-rule-code">can_reveal = <span style="color:var(--red)">NOT</span> is_revealed <span style="color:var(--blue)">AND</span> <span style="color:var(--red)">NOT</span> is_collared</div>
+      <div class="bool-rule-desc"><strong>Where:</strong> inside <code>reveal_cell()</code>, before a left-click is allowed to open a square.<br><strong>Why:</strong> you shouldn't be able to re-open an already-open square, and a square you've flagged with a collar shouldn't open by accident.</div>
+    </div></div>
+
+    <div class="bool-rule"><div class="bool-icon"><svg viewBox="0 0 24 24" width="1em" height="1em" style="vertical-align:-3px" xmlns="http://www.w3.org/2000/svg"><path d="M3 9c0-3.5 4-6 9-6s9 2.5 9 6" fill="none" stroke="#8B5A2B" stroke-width="2.2" stroke-linecap="round"/><circle cx="4.5" cy="9.6" r="1.15" fill="#6B4226"/><circle cx="9.5" cy="11.4" r="1.15" fill="#6B4226"/><circle cx="14.5" cy="11.4" r="1.15" fill="#6B4226"/><circle cx="19.5" cy="9.6" r="1.15" fill="#6B4226"/><circle cx="12" cy="16.3" r="3" fill="#F2C14E" stroke="#C1622D" stroke-width="1.3"/></svg></div><div>
+      <div class="bool-rule-code">can_collar = <span style="color:var(--red)">NOT</span> is_revealed</div>
+      <div class="bool-rule-desc"><strong>Where:</strong> inside <code>toggle_collar()</code>, on every right-click.<br><strong>Why:</strong> collaring is just a personal note for the player — it makes no sense to let someone collar a square that's already open, so this single NOT check blocks that.</div>
+    </div></div>
+
+    <div class="bool-rule"><div class="bool-icon">🌊</div><div>
+      <div class="bool-rule-code">auto_open_neighbour = <span style="color:var(--red)">NOT</span> is_revealed <span style="color:var(--blue)">AND</span> <span style="color:var(--red)">NOT</span> is_collared <span style="color:var(--blue)">AND</span> <span style="color:var(--red)">NOT</span> is_cat</div>
+      <div class="bool-rule-desc"><strong>Where:</strong> in <code>flood_fill()</code>, only when the square you opened has <code>neighbour_count == 0</code> (no cats touching it).<br><strong>Why:</strong> the game auto-opens the touching squares for you, but only the ones that are safe to open — so all three NOTs must hold before a neighbour gets auto-revealed.</div>
+    </div></div>
+
+    <div class="bool-rule"><div class="bool-icon">🔢</div><div>
+      <div class="bool-rule-code">count_for_win = <span style="color:var(--red)">NOT</span> is_cat <span style="color:var(--blue)">AND</span> is_revealed</div>
+      <div class="bool-rule-desc"><strong>Where:</strong> inside <code>check_win()</code>, called after every single reveal.<br><strong>Why:</strong> a square only "counts" toward winning if it's safe AND it's actually been opened. Once 90 squares (100 − 10 cats) satisfy this, <code>game_over</code> is set True and you win.</div>
+    </div></div>
+
+    <div class="bool-rule"><div class="bool-icon">⏱️</div><div>
+      <div class="bool-rule-code">tick_timer = <span style="color:var(--red)">NOT</span> game_over <span style="color:var(--blue)">AND</span> start_time <span style="color:var(--red)">is not</span> None</div>
+      <div class="bool-rule-desc"><strong>Where:</strong> inside <code>update_timer()</code>, which re-checks itself every second in the background.<br><strong>Why:</strong> the clock should only run while the game is still active AND only after the first click has actually happened (that's when <code>start_time</code> gets set).</div>
+    </div></div>
+
+    <!-- Interactive boolean checker -->
+    <div class="bool-demo" style="margin-top:28px">
+      <h3>🧪 Try it: can this cell be revealed?</h3>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:16px">Toggle the states below and watch the boolean expression evaluate live.</p>
+      <div class="toggle-row">
+        <span class="toggle-label">is_revealed</span>
+        <label class="toggle-switch"><input type="checkbox" id="chk-revealed" onchange="evalBool()"><span class="toggle-slider"></span></label>
+        <span id="lbl-revealed" style="font-size:12px;font-family:var(--font-mono);color:var(--red)">False</span>
       </div>
-
-      <div class="tl-item">
-        <div class="tl-dot" style="border-color:var(--accent2)"></div>
-        <div class="tl-title">flood_fill(start_row, start_col) <span style="font-size:11px;font-weight:400;color:var(--text3)">— BFS algorithm</span></div>
-        <div class="tl-body">When you open an empty square (neighbour_count=0), this function auto-opens all connected empty squares using a queue. It keeps adding unvisited empty neighbours to the queue until the whole empty region is revealed.</div>
-        <div class="tl-code">queue = deque([(start_row, start_col)])
-while queue:
-    row, col = queue.popleft()   # take next square
-    for nr, nc in get_neighbours(row, col):
-        # Boolean: only expand if NOT revealed AND NOT collared AND NOT cat
-        if not revealed and not collared and not cat:
-            cell.is_revealed = True
-            if cell.neighbour_count == 0:
-                queue.append((nr, nc))  # keep going!</div>
+      <div class="toggle-row">
+        <span class="toggle-label">is_collared</span>
+        <label class="toggle-switch"><input type="checkbox" id="chk-collared" onchange="evalBool()"><span class="toggle-slider"></span></label>
+        <span id="lbl-collared" style="font-size:12px;font-family:var(--font-mono);color:var(--red)">False</span>
       </div>
-
-      <div class="tl-item">
-        <div class="tl-dot" style="border-color:var(--yellow)"></div>
-        <div class="tl-title">check_win() <span style="font-size:11px;font-weight:400;color:var(--text3)">— called after every reveal</span></div>
-        <div class="tl-body">Counts all cells where is_cat=False AND is_revealed=True. If that count equals total safe squares (90), every safe cell is open — you win!</div>
-        <div class="tl-code">total_safe    = 100 - 10  # = 90 safe squares
-revealed_safe = count where NOT is_cat AND is_revealed
-if revealed_safe == total_safe:
-    game_over = True   # board cleared — show win message</div>
+      <div class="toggle-row">
+        <span class="toggle-label">game_over</span>
+        <label class="toggle-switch"><input type="checkbox" id="chk-gameover" onchange="evalBool()"><span class="toggle-slider"></span></label>
+        <span id="lbl-gameover" style="font-size:12px;font-family:var(--font-mono);color:var(--red)">False</span>
       </div>
-
-      <div class="tl-item">
-        <div class="tl-dot" style="border-color:var(--orange)"></div>
-        <div class="tl-title">toggle_collar(row, col) <span style="font-size:11px;font-weight:400;color:var(--text3)">— right-click handler</span></div>
-        <div class="tl-body">Flips is_collared between True/False. Boolean rule: only works if NOT revealed. Updates the cat counter label on screen.</div>
-        <div class="tl-code">if cell.is_revealed: return  # can't collar an open square
-cell.is_collared = NOT cell.is_collared  # flip True↔False
-cat_counter = TOTAL_CATS - count_of_collars</div>
+      <div class="bool-result" id="bool-result">
+        <div class="result-label">Can the cell be revealed?</div>
+        <div class="result-value result-true" id="bool-answer">✅  YES — cell can be revealed</div>
+        <div class="bool-expr" id="bool-expr">NOT False AND NOT False AND NOT False → <span>True</span></div>
       </div>
-
-      <div class="tl-item">
-        <div class="tl-dot" style="border-color:var(--blue)"></div>
-        <div class="tl-title">update_timer() <span style="font-size:11px;font-weight:400;color:var(--text3)">— self-scheduling, never freezes</span></div>
-        <div class="tl-body">Instead of a while loop (which would freeze the window), this function schedules itself to run again after 1000ms using window.after(). Boolean: only ticks if NOT game_over AND start_time is not None.</div>
-        <div class="tl-code">if NOT game_over AND start_time is not None:
-    elapsed = time.time() - start_time
-    timer_var.set(f"{elapsed}s")
-if NOT game_over:
-    window.after(1000, update_timer)  # schedule next tick</div>
-      </div>
-
     </div>
   </div>
+
 
   <!-- FLOW TAB -->
   <div id="tab-flow" class="tab-panel">
-    <p style="font-size:13px;color:var(--text2);margin-bottom:24px">Trace exactly what happens from the moment you click a square to when the screen updates.</p>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:24px">Trace exactly what happens from the moment you click a square to when the screen updates. Every red box below is a Boolean check — a True/False question the code asks before it's allowed to continue.</p>
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:28px;align-items:start">
 
       <!-- COL 1: Left + Right click flows -->
       <div>
-        <div style="font-size:13px;font-weight:600;margin-bottom:14px;color:var(--text)">▶ Left-click flow</div>
+        <div style="font-size:13px;font-weight:600;margin-bottom:6px;color:var(--text)">▶ Left-click flow</div>
+        <p style="font-size:12px;color:var(--text2);line-height:1.65;margin-bottom:14px">First it checks <code>NOT game_over</code> — if the game already ended, clicking does nothing. If that passes, it checks <code>is_revealed OR is_collared</code> — if either is True, this square can't be opened, so it stops. Otherwise: if it's your first click ever, cats get placed now. Then the square opens — game over if it was a cat, otherwise its number shows, and if that number is 0 the game auto-opens the touching squares for you. Finally it checks if you've won.</p>
         <div class="flow-wrap">
         <div class="flow">
           <div class="flow-node start">You left-click a square</div>
           <div class="flow-arrow"><div class="flow-arrow-line"></div><div class="flow-arrow-head">▼</div></div>
           <div class="flow-node action">left_click(row, col)</div>
           <div class="flow-arrow"><div class="flow-arrow-line"></div></div>
-          <div class="flow-node" style="background:rgba(255,85,102,.08);border-color:var(--red);font-size:12px;padding:10px 16px">Boolean: <strong>NOT game_over?</strong></div>
-          <div class="flow-arrow"><div class="flow-arrow-line"></div><span style="font-size:11px;color:var(--green);margin-left:4px">Yes →</span></div>
+          <div class="flow-gate gate-not">
+            <div class="flow-gate-head"><span class="flow-gate-badge g-not">NOT gate</span><span class="flow-gate-fn">used in left_click()</span></div>
+            <div class="flow-gate-stmt"><span class="k">if</span> <span class="k">not</span> self.game_over:</div>
+            <div class="flow-gate-branches"><span class="flow-pill true">TRUE<span class="res">→ reveal_cell()</span></span><span class="flow-pill false">FALSE<span class="res">→ click ignored</span></span></div>
+          </div>
+          <div class="flow-arrow"><div class="flow-arrow-line"></div></div>
           <div class="flow-node action">reveal_cell(row, col)</div>
           <div class="flow-arrow"><div class="flow-arrow-line"></div></div>
-          <div class="flow-node" style="background:rgba(255,85,102,.08);border-color:var(--red);font-size:12px;padding:10px 16px">Boolean: already revealed<br>OR collared?</div>
-          <div class="flow-arrow"><div class="flow-arrow-line"></div><span style="font-size:11px;color:var(--green)">No → continue</span></div>
-          <div class="flow-node" style="background:rgba(77,166,255,.06);border-color:var(--blue);font-size:12px;padding:10px 16px">Is this first_click?</div>
-          <div class="flow-arrow"><div class="flow-arrow-line"></div><span style="font-size:11px;color:var(--green)">Yes → place_cats() + start timer</span></div>
-          <div class="flow-node" style="background:rgba(255,85,102,.08);border-color:var(--red);font-size:12px;padding:10px 16px">Is it a cat?</div>
+          <div class="flow-gate gate-or">
+            <div class="flow-gate-head"><span class="flow-gate-badge g-or">OR gate</span><span class="flow-gate-fn">used in reveal_cell()</span></div>
+            <div class="flow-gate-stmt"><span class="k">if</span> cell.is_revealed <span class="k">or</span> cell.is_collared:<br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="k">return</span></div>
+            <div class="flow-gate-branches"><span class="flow-pill false">TRUE<span class="res">→ blocked, returns</span></span><span class="flow-pill true">FALSE<span class="res">→ continue opening</span></span></div>
+          </div>
+          <div class="flow-arrow"><div class="flow-arrow-line"></div></div>
+          <div class="flow-gate gate-check">
+            <div class="flow-gate-head"><span class="flow-gate-badge g-check">condition</span><span class="flow-gate-fn">used in reveal_cell()</span></div>
+            <div class="flow-gate-stmt"><span class="k">if</span> self.first_click:</div>
+            <div class="flow-gate-branches"><span class="flow-pill true">TRUE<span class="res">→ place_cats() + start timer</span></span><span class="flow-pill false">FALSE<span class="res">→ skip placement</span></span></div>
+          </div>
+          <div class="flow-arrow"><div class="flow-arrow-line"></div></div>
+          <div class="flow-gate gate-check">
+            <div class="flow-gate-head"><span class="flow-gate-badge g-check">condition</span><span class="flow-gate-fn">used in reveal_cell()</span></div>
+            <div class="flow-gate-stmt"><span class="k">if</span> cell.is_cat:</div>
+            <div class="flow-gate-branches"><span class="flow-pill false">TRUE<span class="res">→ game over</span></span><span class="flow-pill true">FALSE<span class="res">→ continue below</span></span></div>
+          </div>
           <div style="display:flex;gap:20px;width:100%;margin-top:4px">
             <div style="flex:1;display:flex;flex-direction:column;align-items:center">
-              <div style="font-size:11px;color:var(--red);margin-bottom:4px">Yes 🐱</div>
+              <div style="font-size:11px;color:var(--red);margin-bottom:4px">is_cat = True 🐱</div>
               <div class="flow-node end-lose" style="font-size:12px;padding:8px 12px">game_over = True<br>show_all_cats()</div>
             </div>
             <div style="flex:1;display:flex;flex-direction:column;align-items:center">
-              <div style="font-size:11px;color:var(--green);margin-bottom:4px">No ✓</div>
-              <div class="flow-node" style="font-size:12px;padding:8px 12px;border-color:var(--green)">neighbour_count = 0?</div>
-              <div class="flow-arrow"><div class="flow-arrow-line"></div></div>
-              <div style="display:flex;gap:8px">
-                <div class="flow-node" style="font-size:11px;padding:6px 10px;border-color:var(--accent2)">Yes→ flood_fill()</div>
-                <div class="flow-node" style="font-size:11px;padding:6px 10px;border-color:var(--yellow)">No→ show number</div>
+              <div style="font-size:11px;color:var(--green);margin-bottom:4px">is_cat = False ✓</div>
+              <div class="flow-gate gate-check" style="min-width:220px">
+                <div class="flow-gate-head"><span class="flow-gate-badge g-check">condition</span><span class="flow-gate-fn">reveal_cell()</span></div>
+                <div class="flow-gate-stmt"><span class="k">if</span> cell.neighbour_count == 0:</div>
+                <div class="flow-gate-branches"><span class="flow-pill true">TRUE<span class="res">→ flood_fill()</span></span><span class="flow-pill false">FALSE<span class="res">→ show number</span></span></div>
               </div>
               <div class="flow-arrow"><div class="flow-arrow-line"></div></div>
               <div class="flow-node" style="font-size:12px;padding:8px 12px">check_win()</div>
@@ -714,18 +720,27 @@ if NOT game_over:
         </div>
         </div>
 
-        <div style="margin-top:32px;font-size:13px;font-weight:600;margin-bottom:14px;color:var(--text)">🖊 Right-click flow</div>
+        <div style="margin-top:32px;font-size:13px;font-weight:600;margin-bottom:6px;color:var(--text)">🖊 Right-click flow</div>
+        <p style="font-size:12px;color:var(--text2);line-height:1.65;margin-bottom:14px">Same first gate — <code>NOT game_over</code>. Then only one more check: <code>is_revealed</code>. If the square is already open, collaring it makes no sense, so it's blocked. Otherwise <code>is_collared</code> simply flips (True→False or False→True), and the on-screen cat counter updates.</p>
         <div class="flow">
           <div class="flow-node start">You right-click a square</div>
           <div class="flow-arrow"><div class="flow-arrow-line"></div><div class="flow-arrow-head">▼</div></div>
           <div class="flow-node action">right_click(row, col)</div>
           <div class="flow-arrow"><div class="flow-arrow-line"></div></div>
-          <div class="flow-node" style="background:rgba(255,85,102,.08);border-color:var(--red);font-size:12px;padding:10px 16px">Boolean: NOT game_over?</div>
-          <div class="flow-arrow"><div class="flow-arrow-line"></div><span style="font-size:11px;color:var(--green)">Yes →</span></div>
+          <div class="flow-gate gate-not">
+            <div class="flow-gate-head"><span class="flow-gate-badge g-not">NOT gate</span><span class="flow-gate-fn">used in right_click()</span></div>
+            <div class="flow-gate-stmt"><span class="k">if</span> <span class="k">not</span> self.game_over:</div>
+            <div class="flow-gate-branches"><span class="flow-pill true">TRUE<span class="res">→ toggle_collar()</span></span><span class="flow-pill false">FALSE<span class="res">→ click ignored</span></span></div>
+          </div>
+          <div class="flow-arrow"><div class="flow-arrow-line"></div></div>
           <div class="flow-node action">toggle_collar(row, col)</div>
           <div class="flow-arrow"><div class="flow-arrow-line"></div></div>
-          <div class="flow-node" style="background:rgba(255,85,102,.08);border-color:var(--red);font-size:12px;padding:10px 16px">Boolean: is_revealed?</div>
-          <div class="flow-arrow"><div class="flow-arrow-line"></div><span style="font-size:11px;color:var(--green)">No → allowed</span></div>
+          <div class="flow-gate gate-check">
+            <div class="flow-gate-head"><span class="flow-gate-badge g-check">condition</span><span class="flow-gate-fn">used in toggle_collar()</span></div>
+            <div class="flow-gate-stmt"><span class="k">if</span> cell.is_revealed:<br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="k">return</span></div>
+            <div class="flow-gate-branches"><span class="flow-pill false">TRUE<span class="res">→ blocked, returns</span></span><span class="flow-pill true">FALSE<span class="res">→ allowed</span></span></div>
+          </div>
+          <div class="flow-arrow"><div class="flow-arrow-line"></div></div>
           <div class="flow-node" style="font-size:12px;padding:10px 16px">is_collared = NOT is_collared</div>
           <div class="flow-arrow"><div class="flow-arrow-line"></div></div>
           <div class="flow-node end-win" style="font-size:12px;padding:8px 12px">Update cat counter on screen</div>
@@ -734,26 +749,35 @@ if NOT game_over:
 
       <!-- COL 2: Timer flow + key facts -->
       <div>
-        <div style="font-size:13px;font-weight:600;margin-bottom:14px;color:var(--text)">⏱ Timer flow (background)</div>
+        <div style="font-size:13px;font-weight:600;margin-bottom:6px;color:var(--text)">⏱ Timer flow (background)</div>
+        <p style="font-size:12px;color:var(--text2);line-height:1.65;margin-bottom:14px">This runs on its own, once a second, without you clicking anything. Each tick it checks <code>NOT game_over AND start_time is not None</code> — both must hold, otherwise the clock either shouldn't be running (game ended) or hasn't started yet (no click made). If both pass, it updates the label and reschedules itself for one second later.</p>
         <div class="flow">
           <div class="flow-node start" style="font-size:12px">update_timer() scheduled</div>
           <div class="flow-arrow"><div class="flow-arrow-line"></div><span style="font-size:11px;color:var(--text3)">waits 1000ms</span></div>
-          <div class="flow-node" style="font-size:12px;padding:10px 16px;border-color:var(--blue)">NOT game_over AND<br>start_time exists?</div>
-          <div class="flow-arrow"><div class="flow-arrow-line"></div><span style="font-size:11px;color:var(--green)">Yes →</span></div>
+          <div class="flow-gate gate-and">
+            <div class="flow-gate-head"><span class="flow-gate-badge g-and">AND gate</span><span class="flow-gate-fn">used in update_timer()</span></div>
+            <div class="flow-gate-stmt"><span class="k">if</span> <span class="k">not</span> self.game_over <span class="k">and</span><br>&nbsp;&nbsp;&nbsp;&nbsp;self.start_time <span class="k">is not</span> None:</div>
+            <div class="flow-gate-branches"><span class="flow-pill true">TRUE<span class="res">→ update the clock</span></span><span class="flow-pill false">FALSE<span class="res">→ skip this tick</span></span></div>
+          </div>
+          <div class="flow-arrow"><div class="flow-arrow-line"></div></div>
           <div class="flow-node" style="font-size:12px;padding:10px 16px">elapsed = now − start_time<br>update label on screen</div>
           <div class="flow-arrow"><div class="flow-arrow-line"></div></div>
-          <div class="flow-node" style="font-size:12px;padding:10px 16px;border-color:var(--blue)">NOT game_over?</div>
-          <div class="flow-arrow"><div class="flow-arrow-line"></div><span style="font-size:11px;color:var(--green)">Yes →</span></div>
+          <div class="flow-gate gate-not">
+            <div class="flow-gate-head"><span class="flow-gate-badge g-not">NOT gate</span><span class="flow-gate-fn">used in update_timer()</span></div>
+            <div class="flow-gate-stmt"><span class="k">if</span> <span class="k">not</span> self.game_over:</div>
+            <div class="flow-gate-branches"><span class="flow-pill true">TRUE<span class="res">→ reschedule +1s</span></span><span class="flow-pill false">FALSE<span class="res">→ timer stops</span></span></div>
+          </div>
+          <div class="flow-arrow"><div class="flow-arrow-line"></div></div>
           <div class="flow-node start" style="font-size:12px">Schedule self again after 1s</div>
         </div>
 
         <div style="margin-top:32px">
           <div style="font-size:13px;font-weight:600;margin-bottom:10px;color:var(--text)">📌 Key facts</div>
           <div style="display:flex;flex-direction:column;gap:8px">
-            <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--text2);line-height:1.6"><span style="color:var(--accent2);font-weight:600">100 Cell objects</span> created at startup — one per square</div>
+            <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--text2);line-height:1.6"><span style="color:var(--accent2);font-weight:600">100 squares</span> each carry their own is_cat / is_revealed / is_collared / neighbour_count</div>
             <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--text2);line-height:1.6"><span style="color:var(--green);font-weight:600">Cats placed AFTER</span> first click to guarantee a safe opening</div>
             <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--text2);line-height:1.6"><span style="color:var(--blue);font-weight:600">window.after(1000)</span> schedules the timer without freezing the UI</div>
-            <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--text2);line-height:1.6"><span style="color:var(--orange);font-weight:600">BFS deque</span> auto-reveals entire empty regions in one click</div>
+            <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--text2);line-height:1.6"><span style="color:var(--orange);font-weight:600">Auto-reveal</span> opens every connected empty square in one click</div>
             <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--text2);line-height:1.6"><span style="color:var(--yellow);font-weight:600">Win = 90 safe cells</span> revealed (100 total − 10 cats)</div>
           </div>
         </div>
@@ -802,172 +826,6 @@ if NOT game_over:
         </div>
       </div>
     </div>
-  </div>
-</section>
-
-<hr class="divider">
-
-<!-- ── BOOLEAN ALGEBRA ── -->
-<section id="boolean" class="section">
-  <div class="section-label">The math behind every decision</div>
-  <h2 class="section-title">Boolean algebra — the game's rulebook</h2>
-  <p class="section-sub">Every decision in this game is a boolean expression. Boolean algebra has only two values — True and False — and three main operations.</p>
-
-  <div class="bool-grid" style="margin-top:32px">
-    <div class="bool-card not">
-      <div class="bool-op">NOT</div>
-      <div class="bool-title">NOT — flips the value</div>
-      <div class="bool-desc">NOT True = False. NOT False = True. Used to check "is this thing <em>not</em> the case?" In Python: <code style="font-size:11px">not x</code></div>
-      <table class="truth-table">
-        <tr><th>Input</th><th>NOT Input</th></tr>
-        <tr><td class="T">True</td><td class="F">False</td></tr>
-        <tr><td class="F">False</td><td class="T">True</td></tr>
-      </table>
-      <div style="font-family:var(--font-mono);font-size:11px;color:var(--accent2);margin-top:10px;line-height:1.8">Game use:<br>if not cell.is_revealed: ...</div>
-    </div>
-    <div class="bool-card and">
-      <div class="bool-op">AND</div>
-      <div class="bool-title">AND — both must be true</div>
-      <div class="bool-desc">Only True if both sides are True. Used to combine multiple conditions. In Python: <code style="font-size:11px">x and y</code></div>
-      <table class="truth-table">
-        <tr><th>A</th><th>B</th><th>A AND B</th></tr>
-        <tr><td class="T">T</td><td class="T">T</td><td class="T">True</td></tr>
-        <tr><td class="T">T</td><td class="F">F</td><td class="F">False</td></tr>
-        <tr><td class="F">F</td><td class="T">T</td><td class="F">False</td></tr>
-        <tr><td class="F">F</td><td class="F">F</td><td class="F">False</td></tr>
-      </table>
-      <div style="font-family:var(--font-mono);font-size:11px;color:var(--accent2);margin-top:10px;line-height:1.8">Game use:<br>if not revealed and not collared: ...</div>
-    </div>
-    <div class="bool-card or">
-      <div class="bool-op">OR</div>
-      <div class="bool-title">OR — at least one true</div>
-      <div class="bool-desc">True if either side is True. In Python: <code style="font-size:11px">x or y</code>. Used to combine alternative blocking conditions.</div>
-      <table class="truth-table">
-        <tr><th>A</th><th>B</th><th>A OR B</th></tr>
-        <tr><td class="T">T</td><td class="T">T</td><td class="T">True</td></tr>
-        <tr><td class="T">T</td><td class="F">F</td><td class="T">True</td></tr>
-        <tr><td class="F">F</td><td class="T">T</td><td class="T">True</td></tr>
-        <tr><td class="F">F</td><td class="F">F</td><td class="F">False</td></tr>
-      </table>
-      <div style="font-family:var(--font-mono);font-size:11px;color:var(--accent2);margin-top:10px;line-height:1.8">Game use:<br>if revealed or collared: return</div>
-    </div>
-    <div class="bool-card xor">
-      <div class="bool-op">NOT (toggle)</div>
-      <div class="bool-title">Toggle — flip a boolean</div>
-      <div class="bool-desc">Setting a variable to NOT itself flips it between True and False. This is how collaring works — one right-click places the collar, next right-click removes it.</div>
-      <table class="truth-table">
-        <tr><th>Before</th><th>After toggle</th><th>Effect</th></tr>
-        <tr><td class="F">False</td><td class="T">True</td><td><svg viewBox="0 0 24 24" width="1em" height="1em" style="vertical-align:-3px" xmlns="http://www.w3.org/2000/svg"><path d="M3 9c0-3.5 4-6 9-6s9 2.5 9 6" fill="none" stroke="#8B5A2B" stroke-width="2.2" stroke-linecap="round"/><circle cx="4.5" cy="9.6" r="1.15" fill="#6B4226"/><circle cx="9.5" cy="11.4" r="1.15" fill="#6B4226"/><circle cx="14.5" cy="11.4" r="1.15" fill="#6B4226"/><circle cx="19.5" cy="9.6" r="1.15" fill="#6B4226"/><circle cx="12" cy="16.3" r="3" fill="#F2C14E" stroke="#C1622D" stroke-width="1.3"/></svg> Collar placed</td></tr>
-        <tr><td class="T">True</td><td class="F">False</td><td>Collar removed</td></tr>
-      </table>
-      <div style="font-family:var(--font-mono);font-size:11px;color:var(--accent2);margin-top:10px;line-height:1.8">Game use:<br>is_collared = not is_collared</div>
-    </div>
-  </div>
-
-  <!-- All 7 boolean rules -->
-  <h3 style="font-size:16px;font-weight:600;margin:36px 0 16px;color:var(--text)">All 7 boolean rules used in this game</h3>
-
-  <div class="bool-rule"><div class="bool-icon">🖱️</div><div><div class="bool-rule-code">accept_click = <span style="color:var(--red)">NOT</span> game_over</div><div class="bool-rule-desc">Before doing anything with a click, check game hasn't ended. If game_over is True, ignore all clicks.</div></div></div>
-  <div class="bool-rule"><div class="bool-icon">👁️</div><div><div class="bool-rule-code">can_reveal = <span style="color:var(--red)">NOT</span> is_revealed <span style="color:var(--blue)">AND</span> <span style="color:var(--red)">NOT</span> is_collared</div><div class="bool-rule-desc">A cell can only be revealed if it hasn't already been opened AND it hasn't been collared. Both conditions must be false.</div></div></div>
-  <div class="bool-rule"><div class="bool-icon"><svg viewBox="0 0 24 24" width="1em" height="1em" style="vertical-align:-3px" xmlns="http://www.w3.org/2000/svg"><path d="M3 9c0-3.5 4-6 9-6s9 2.5 9 6" fill="none" stroke="#8B5A2B" stroke-width="2.2" stroke-linecap="round"/><circle cx="4.5" cy="9.6" r="1.15" fill="#6B4226"/><circle cx="9.5" cy="11.4" r="1.15" fill="#6B4226"/><circle cx="14.5" cy="11.4" r="1.15" fill="#6B4226"/><circle cx="19.5" cy="9.6" r="1.15" fill="#6B4226"/><circle cx="12" cy="16.3" r="3" fill="#F2C14E" stroke="#C1622D" stroke-width="1.3"/></svg></div><div><div class="bool-rule-code">can_collar = <span style="color:var(--red)">NOT</span> is_revealed</div><div class="bool-rule-desc">You can only place or remove a collar if the cell hasn't been revealed yet. Open cells can't be collared.</div></div></div>
-  <div class="bool-rule"><div class="bool-icon">🐱</div><div><div class="bool-rule-code">can_place_cat = <span style="color:var(--red)">NOT</span> in_safe_zone <span style="color:var(--blue)">AND</span> <span style="color:var(--red)">NOT</span> already_cat</div><div class="bool-rule-desc">When placing 10 cats: skip if the position is in the first-click's safe zone, AND skip if a cat is already there.</div></div></div>
-  <div class="bool-rule"><div class="bool-icon">🔢</div><div><div class="bool-rule-code">count_for_win = <span style="color:var(--red)">NOT</span> is_cat <span style="color:var(--blue)">AND</span> is_revealed</div><div class="bool-rule-desc">A cell counts toward the win condition only if it's safe (not a cat) AND it's been opened. Used to check all 90 safe cells.</div></div></div>
-  <div class="bool-rule"><div class="bool-icon">🌊</div><div><div class="bool-rule-code">expand_bfs = <span style="color:var(--red)">NOT</span> is_revealed <span style="color:var(--blue)">AND</span> <span style="color:var(--red)">NOT</span> is_collared <span style="color:var(--blue)">AND</span> <span style="color:var(--red)">NOT</span> is_cat</div><div class="bool-rule-desc">In flood fill: add a neighbour to the queue only if it hasn't been revealed, isn't collared, and isn't a cat. Three conditions, all with NOT.</div></div></div>
-  <div class="bool-rule"><div class="bool-icon">⏱️</div><div><div class="bool-rule-code">tick_timer = <span style="color:var(--red)">NOT</span> game_over <span style="color:var(--blue)">AND</span> start_time <span style="color:var(--red)">is not</span> None</div><div class="bool-rule-desc">The timer only counts while the game is active AND after the first click (start_time is only set on first click).</div></div></div>
-
-  <!-- Interactive boolean checker -->
-  <div class="bool-demo">
-    <h3>🧪 Try it: reveal_cell() boolean check</h3>
-    <p style="font-size:13px;color:var(--text2);margin-bottom:16px">Toggle the cell states below and watch the boolean expression evaluate in real time.</p>
-    <div class="toggle-row">
-      <span class="toggle-label">is_revealed</span>
-      <label class="toggle-switch"><input type="checkbox" id="chk-revealed" onchange="evalBool()"><span class="toggle-slider"></span></label>
-      <span id="lbl-revealed" style="font-size:12px;font-family:var(--font-mono);color:var(--red)">False</span>
-    </div>
-    <div class="toggle-row">
-      <span class="toggle-label">is_collared</span>
-      <label class="toggle-switch"><input type="checkbox" id="chk-collared" onchange="evalBool()"><span class="toggle-slider"></span></label>
-      <span id="lbl-collared" style="font-size:12px;font-family:var(--font-mono);color:var(--red)">False</span>
-    </div>
-    <div class="toggle-row">
-      <span class="toggle-label">game_over</span>
-      <label class="toggle-switch"><input type="checkbox" id="chk-gameover" onchange="evalBool()"><span class="toggle-slider"></span></label>
-      <span id="lbl-gameover" style="font-size:12px;font-family:var(--font-mono);color:var(--red)">False</span>
-    </div>
-    <div class="bool-result" id="bool-result">
-      <div class="result-label">Can the cell be revealed?</div>
-      <div class="result-value result-true" id="bool-answer">✅  YES — cell can be revealed</div>
-      <div class="bool-expr" id="bool-expr">NOT False AND NOT False AND NOT False → <span>True</span></div>
-    </div>
-  </div>
-</section>
-
-<hr class="divider">
-
-<!-- ── FLOOD FILL ── -->
-<section id="bfs" class="section">
-  <div class="section-label">The auto-reveal algorithm</div>
-  <h2 class="section-title">Flood fill — how empty areas auto-open</h2>
-  <p class="section-sub">When you click a blank square (zero nearby cats), the game auto-reveals an entire connected region. This uses a computer science algorithm called Breadth First Search (BFS). Step through it to see how it works.</p>
-
-  <div class="callout callout-info" style="margin-top:24px"><span class="callout-icon">💡</span><span><strong>BFS in plain English:</strong> Start with one square. Check all its neighbours. If a neighbour is safe and empty, add it to a queue. Process the queue one by one, checking each square's neighbours. Keep going until the queue is empty.</span></div>
-
-  <div style="margin-top:24px">
-    <div class="bfs-controls">
-      <button class="bfs-btn primary-btn" onclick="bfsReset()">↺ Reset</button>
-      <button class="bfs-btn" onclick="bfsStep()">Step →</button>
-      <button class="bfs-btn" onclick="bfsAuto()">▶ Auto-play</button>
-    </div>
-    <div class="bfs-step-info" id="bfs-info">Click "Step" to begin. The highlighted cell (green) was just clicked — it has 0 nearby cats.</div>
-    <div class="bfs-grid" id="bfs-grid"></div>
-    <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:10px;font-size:12px;color:var(--text2)">
-      <span><span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:rgba(68,221,136,.2);border:1px solid var(--green);vertical-align:middle;margin-right:4px"></span>Origin (clicked)</span>
-      <span><span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:rgba(107,66,38,.25);border:1px solid var(--accent);vertical-align:middle;margin-right:4px"></span>In queue (to be processed)</span>
-      <span><span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:var(--cell-r);border:1px solid var(--border);vertical-align:middle;margin-right:4px"></span>Visited (revealed)</span>
-      <span><span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:var(--cell);border:1px solid var(--border2);vertical-align:middle;margin-right:4px"></span>Wall (has a cat / number)</span>
-    </div>
-  </div>
-
-  <div class="code-section" style="margin-top:28px">
-    <div class="code-header"><div class="code-dots"><div class="code-dot r"></div><div class="code-dot y"></div><div class="code-dot g"></div></div><span class="code-filename">flood_fill() — the BFS code</span></div>
-    <pre><span class="kw">def</span> <span class="fn">flood_fill</span>(self, start_row, start_col):
-    <span class="cm">"""BFS: auto-reveals connected empty region."""</span>
-    queue = deque([(start_row, start_col)])   <span class="cm"># start with clicked cell</span>
-
-    <span class="kw">while</span> queue:                              <span class="cm"># keep going until queue empty</span>
-        row, col = queue.popleft()            <span class="cm"># take next cell from front</span>
-        <span class="kw">for</span> nr, nc <span class="kw">in</span> self.<span class="fn">get_neighbours</span>(row, col):
-            cell = self.board[nr][nc]
-            <span class="cm"># Boolean: only if NOT revealed AND NOT collared AND NOT cat</span>
-            <span class="kw">if not</span> cell.is_revealed <span class="kw">and not</span> cell.is_collared <span class="kw">and not</span> cell.is_cat:
-                cell.is_revealed = <span class="kw">True</span>
-                cell.button.config(text=<span class="str">""</span>, bg=CELL_REVEAL, relief=<span class="str">"sunken"</span>)
-                <span class="kw">if</span> cell.neighbour_count == <span class="num">0</span>:
-                    queue.append((nr, nc))    <span class="cm"># empty: keep expanding</span>
-                <span class="cm"># else: number cell — reveal it but don't expand further</span></pre>
-  </div>
-</section>
-
-<hr class="divider">
-
-<!-- ── GLOSSARY ── -->
-<section class="section">
-  <div class="section-label">Key terms</div>
-  <h2 class="section-title">Glossary</h2>
-  <p class="section-sub">Quick definitions for every programming concept used in this game.</p>
-  <div class="glossary-grid">
-    <div class="glossary-card"><div class="glossary-term">class</div><div class="glossary-def">A template/blueprint for creating objects. Like a cookie cutter — the class is the cutter, each object made from it is a cookie.</div></div>
-    <div class="glossary-card"><div class="glossary-term">instance</div><div class="glossary-def">One specific object made from a class. There are 100 Cell instances (one per square) and 1 CatstropheGame instance.</div></div>
-    <div class="glossary-card"><div class="glossary-term">__init__()</div><div class="glossary-def">The constructor — runs automatically when you create an instance. Sets up all the starting values. Called once per object.</div></div>
-    <div class="glossary-card"><div class="glossary-term">self</div><div class="glossary-def">Inside a class method, "self" refers to the current instance. self.is_cat means "this cell's is_cat variable."</div></div>
-    <div class="glossary-card"><div class="glossary-term">boolean</div><div class="glossary-def">A value that is either True or False. Named after mathematician George Boole. All the cell states (is_cat, is_revealed, is_collared) are booleans.</div></div>
-    <div class="glossary-card"><div class="glossary-term">deque</div><div class="glossary-def">A "double-ended queue" from Python's collections module. Used in BFS because adding/removing from both ends is O(1) — faster than a regular list.</div></div>
-    <div class="glossary-card"><div class="glossary-term">BFS</div><div class="glossary-def">Breadth First Search — explores all neighbours level by level. Used in flood fill to auto-reveal connected empty squares in the right order.</div></div>
-    <div class="glossary-card"><div class="glossary-term">StringVar</div><div class="glossary-def">A special tkinter variable. When you change its value, any label or widget connected to it updates automatically on screen. Used for the timer and cat counter.</div></div>
-    <div class="glossary-card"><div class="glossary-term">lambda</div><div class="glossary-def">A tiny anonymous function written inline. Used in _build_board() so each cell's click handler remembers its own (row, col): lambda r=row, c=col: ...</div></div>
-    <div class="glossary-card"><div class="glossary-term">window.after()</div><div class="glossary-def">Tkinter's way to schedule something to run later without freezing. Used by update_timer() to tick every 1000ms without blocking the UI.</div></div>
-    <div class="glossary-card"><div class="glossary-term">O(n)</div><div class="glossary-def">Big-O notation — how an algorithm scales. O(rows×cols) means the time grows proportionally with the board size. BFS is O(rows×cols) worst case.</div></div>
-    <div class="glossary-card"><div class="glossary-term">safe zone</div><div class="glossary-def">The first-clicked cell and its 8 neighbours. Cats are never placed here, guaranteeing the very first click is always safe and opens a good area.</div></div>
   </div>
 </section>
 
@@ -1324,93 +1182,6 @@ function evalBool(){
 }
 
 /* ══════════════════════════════════════════
-   BFS VISUALISER
-══════════════════════════════════════════ */
-// 8×8 grid: 0=empty, 1-8=number, 9=wall(cat-adjacent/cat)
-const BFS_MAP=[
-  [9,9,0,0,0,9,9,9],
-  [9,1,1,1,0,1,9,9],
-  [9,1,0,0,0,1,1,9],
-  [9,1,0,0,0,0,1,9],
-  [9,1,1,2,1,1,1,9],
-  [9,9,9,9,9,9,9,9],
-  [9,0,0,0,0,0,1,9],
-  [9,1,1,1,1,1,1,9],
-];
-const BFS_ORIGIN=[0,2]; // where we clicked (row,col)
-let bfsQueue=[], bfsVisited=new Set(), bfsStep_=0, bfsAuto_=false, bfsAutoID=null;
-
-function bfsReset(){
-  clearInterval(bfsAutoID);bfsAuto_=false;
-  bfsQueue=[[...BFS_ORIGIN]];
-  bfsVisited=new Set([`${BFS_ORIGIN[0]},${BFS_ORIGIN[1]}`]);
-  bfsStep_=0;
-  bfsDraw();
-  document.getElementById('bfs-info').textContent='Click "Step" to begin. The green cell was just clicked — it has 0 nearby cats.';
-}
-
-function bfsDraw(){
-  const grid=document.getElementById('bfs-grid');
-  grid.innerHTML='';
-  for(let r=0;r<8;r++)for(let c=0;c<8;c++){
-    const el=document.createElement('div');
-    el.className='bfs-cell';
-    const k=`${r},${c}`;
-    const isOrigin=r===BFS_ORIGIN[0]&&c===BFS_ORIGIN[1];
-    const inQueue=bfsQueue.some(([qr,qc])=>qr===r&&qc===c);
-    const visited=bfsVisited.has(k)&&!inQueue;
-    const val=BFS_MAP[r][c];
-
-    if(val===9){el.classList.add('bfs-wall');}
-    else if(isOrigin&&bfsStep_===0){el.classList.add('bfs-origin');}
-    else if(inQueue){el.classList.add('bfs-queued');el.textContent='Q';}
-    else if(visited){
-      if(val===0){el.classList.add('bfs-visited');}
-      else{el.classList.add('bfs-number');el.textContent=val;el.style.color=NUM_COLORS_D[val];}
-    }else{
-      if(val===0){el.classList.add('bfs-empty');}
-      else{el.classList.add('bfs-number');el.textContent=val;el.style.color=NUM_COLORS_D[val];}
-    }
-    grid.appendChild(el);
-  }
-}
-
-function bfsStep(){
-  if(bfsQueue.length===0){
-    document.getElementById('bfs-info').textContent='✅ BFS complete! Queue is empty. All connected empty cells have been revealed.';
-    return;
-  }
-  const [r,c]=bfsQueue.shift();
-  bfsStep_++;
-  let added=0;
-  const dirs=[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
-  dirs.forEach(([dr,dc])=>{
-    const nr=r+dr,nc=c+dc;
-    if(nr<0||nr>=8||nc<0||nc>=8)return;
-    const k=`${nr},${nc}`;
-    const val=BFS_MAP[nr][nc];
-    if(val!==9&&!bfsVisited.has(k)){
-      bfsVisited.add(k);
-      if(val===0)bfsQueue.push([nr,nc]);
-      added++;
-    }
-  });
-  bfsDraw();
-  const info=`Step ${bfsStep_}: Processed (${r},${c}). Added ${added} new cells to queue. Queue now has ${bfsQueue.length} item(s).`;
-  document.getElementById('bfs-info').textContent=info;
-}
-
-function bfsAuto(){
-  if(bfsAutoID)clearInterval(bfsAutoID);
-  bfsAutoID=setInterval(()=>{
-    if(bfsQueue.length===0){clearInterval(bfsAutoID);return;}
-    bfsStep();
-  },500);
-}
-
-bfsReset();
-
-/* ══════════════════════════════════════════
    QUIZ
 ══════════════════════════════════════════ */
 const QUESTIONS=[
@@ -1422,10 +1193,6 @@ const QUESTIONS=[
    opts:["It's faster that way","So the board looks nicer","To guarantee the first click is always safe — cats avoid the safe zone","Because Python is slow"],
    ans:2,
    ex:"The first click position + its 8 neighbours form a 'safe zone'. Cats are placed after so they can avoid this zone, making sure the player never hits a cat on their very first click."},
-  {q:"What algorithm does flood_fill() use?",
-   opts:["Depth First Search (DFS)","Binary Search","Breadth First Search (BFS)","Bubble Sort"],
-   ans:2,
-   ex:"BFS uses a queue (deque) to explore cells level by level — all cells at distance 1 first, then distance 2, etc. This ensures the empty region is revealed outward from the clicked cell."},
   {q:"The boolean expression for flood_fill's expansion is: 'NOT revealed AND NOT collared AND NOT cat'. If is_collared = True, what is the result?",
    opts:["True — cell gets added to queue","False — cell is skipped","Depends on is_cat","Depends on is_revealed"],
    ans:1,
